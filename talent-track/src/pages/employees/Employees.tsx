@@ -11,6 +11,7 @@ import {
   ListItemText,
   Typography,
   Grid,
+  OutlinedInput,
   SelectChangeEvent,
 } from "@mui/material";
 import { employees as employeeData } from "./mockData";
@@ -32,14 +33,12 @@ const Employees: React.FC = () => {
   };
 
   const handleSortChange = (e: SelectChangeEvent<string>) => {
-    const order = e.target.value as string;
+    const order = e.target.value;
     setSortOrder(order);
     filterEmployees(search, selectedIndustries, order);
   };
 
-  const handleIndustryChange = (
-    event: React.ChangeEvent<{ value: unknown }>,
-  ) => {
+  const handleIndustryChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value as string[];
     setSelectedIndustries(value);
     filterEmployees(search, value, sortOrder);
@@ -66,27 +65,22 @@ const Employees: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: "flex", padding: 2 }}>
-      <Box sx={{ width: 200, marginRight: 2 }}>
-        <Typography variant="h6">Industries</Typography>
-        {industries.map((industry) => (
-          <FormControl key={industry} sx={{ display: "flex" }}>
-            <Checkbox
-              checked={selectedIndustries.includes(industry)}
-              onChange={handleIndustryChange}
-              value={industry}
-            />
-            <ListItemText primary={industry} />
-          </FormControl>
-        ))}
-      </Box>
-      <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ display: "flex", padding: 2, flexDirection: "column" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          marginBottom: 2,
+          gap: 2,
+        }}
+      >
         <Box
           sx={{
             display: "flex",
-            justifyContent: "end",
-            marginBottom: 2,
-            gap: 1,
+            flexDirection: { xs: "column", md: "row" },
+            gap: 2,
+            alignItems: { xs: "flex-start", md: "center" },
           }}
         >
           <TextField
@@ -94,8 +88,33 @@ const Employees: React.FC = () => {
             variant="outlined"
             value={search}
             onChange={handleSearchChange}
+            sx={{ width: { xs: "100%", md: "auto" } }}
           />
-          <FormControl variant="outlined">
+          <FormControl
+            variant="outlined"
+            sx={{ width: { xs: "100%", md: 200 } }}
+          >
+            <InputLabel>Industries</InputLabel>
+            <Select
+              multiple
+              value={selectedIndustries}
+              onChange={handleIndustryChange}
+              input={<OutlinedInput label="Industries" />}
+              renderValue={(selected) => selected.join(", ")}
+              placeholder="Select Industries"
+            >
+              {industries.map((industry) => (
+                <MenuItem key={industry} value={industry}>
+                  <Checkbox checked={selectedIndustries.includes(industry)} />
+                  <ListItemText primary={industry} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl
+            variant="outlined"
+            sx={{ width: { xs: "100%", md: 100 } }}
+          >
             <InputLabel>Sort</InputLabel>
             <Select value={sortOrder} onChange={handleSortChange} label="Sort">
               <MenuItem value="asc">ASC</MenuItem>
@@ -103,14 +122,14 @@ const Employees: React.FC = () => {
             </Select>
           </FormControl>
         </Box>
-        <Grid container spacing={2}>
-          {filteredEmployees.map((employee) => (
-            <Grid item xs={12} sm={6} md={4} key={employee.id}>
-              <EmployeeCard employee={employee} />
-            </Grid>
-          ))}
-        </Grid>
       </Box>
+      <Grid container spacing={2}>
+        {filteredEmployees.map((employee) => (
+          <Grid item xs={12} sm={6} md={4} key={employee.id}>
+            <EmployeeCard employee={employee} />
+          </Grid>
+        ))}
+      </Grid>
     </Box>
   );
 };

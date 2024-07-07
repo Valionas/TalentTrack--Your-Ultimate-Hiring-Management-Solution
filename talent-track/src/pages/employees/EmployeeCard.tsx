@@ -1,60 +1,48 @@
-// src/components/EmployeeCard.tsx
+// src/pages/employees/EmployeeCard.tsx
 import React from "react";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Avatar,
-  Box,
-  Rating,
-} from "@mui/material";
+import { Card, CardContent, Typography, Avatar, Box } from "@mui/material";
+import Rating from "@mui/material/Rating";
 import { Employee } from "../../packages/models/Employee";
 
 const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee }) => {
   return (
-    <Card sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <Box sx={{ display: "flex", alignItems: "center", padding: 2 }}>
-        <Avatar
-          src={employee.avatar}
-          alt={employee.name}
-          sx={{ width: 80, height: 80, marginRight: 2 }}
-        />
-        <Box>
-          <Typography variant="h6">{employee.name}</Typography>
+    <Card
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        marginBottom: 2,
+        transition: "transform 0.2s, box-shadow 0.2s",
+        "&:hover": {
+          transform: "scale(1.02)",
+          boxShadow: "0 8px 16px rgba(0,0,0,0.2)",
+        },
+      }}
+    >
+      <Avatar
+        src={employee.avatar}
+        alt={employee.name}
+        sx={{ width: 80, height: 80, margin: 2 }}
+      />
+      <CardContent>
+        <Typography variant="h6">{employee.name}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Industry: {employee.industry}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Age: {employee.age}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Country: {employee.country}
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            Industry: {employee.industry}
+            Rating:
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Age: {employee.age}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Country: {employee.country}
-          </Typography>
+          <Rating value={employee.rating} precision={0.5} readOnly />
         </Box>
-      </Box>
-      <CardContent
-        sx={{
-          flexGrow: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-        }}
-      >
-        <Box>
-          <Box sx={{ display: "flex", alignItems: "center", marginBottom: 1 }}>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ marginRight: 1 }}
-            >
-              Rating:
-            </Typography>
-            <Rating value={employee.rating} readOnly precision={0.1} />
-          </Box>
-          <Typography variant="body2" color="text.secondary">
-            Skills: {employee.skills.join(", ")}
-          </Typography>
-        </Box>
+        <Typography variant="body2" color="text.secondary">
+          Skills: {employee.skills.join(", ")}
+        </Typography>
       </CardContent>
     </Card>
   );
