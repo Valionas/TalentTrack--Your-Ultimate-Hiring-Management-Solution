@@ -1,0 +1,55 @@
+import { Employee } from "../../packages/models/Employee";
+
+export const employees: Employee[] = [
+    {
+      id: 1,
+      name: 'John Doe',
+      industry: 'Technology',
+      avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
+      age: 30,
+      country: 'USA',
+      rating: 4.5,
+      skills: ['JavaScript', 'React', 'Node.js'],
+    },
+    {
+      id: 2,
+      name: 'Jane Smith',
+      industry: 'Healthcare',
+      avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
+      age: 28,
+      country: 'Canada',
+      rating: 4.8,
+      skills: ['Nursing', 'Patient Care', 'EMR'],
+    },
+    {
+      id: 3,
+      name: 'Emily Johnson',
+      industry: 'Finance',
+      avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
+      age: 35,
+      country: 'UK',
+      rating: 4.6,
+      skills: ['Accounting', 'Financial Analysis', 'Excel'],
+    },
+    {
+      id: 4,
+      name: 'Michael Brown',
+      industry: 'Education',
+      avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
+      age: 40,
+      country: 'Australia',
+      rating: 4.7,
+      skills: ['Teaching', 'Curriculum Development', 'Classroom Management'],
+    },
+    {
+      id: 5,
+      name: 'Emma Wilson',
+      industry: 'Technology',
+      avatar: 'https://randomuser.me/api/portraits/women/3.jpg',
+      age: 25,
+      country: 'New Zealand',
+      rating: 4.9,
+      skills: ['Software Development', 'Java', 'Python'],
+    },
+    // Add more employees as needed
+  ];
