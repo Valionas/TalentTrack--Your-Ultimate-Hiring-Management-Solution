@@ -5,6 +5,7 @@ import BackgroundComponent from "./Background";
 import InitialSection from "./initial-section/InitialSection";
 import FeatureSection from "./feature-section/FeatureSection";
 import ReviewsSection from "./review-section/ReviewSection";
+import AboutUsSection from "./about-us-section/AboutUsSection";
 
 const Home: React.FC = () => {
   return (
@@ -12,6 +13,7 @@ const Home: React.FC = () => {
       <Container maxWidth="lg">
         <InitialSection />
         <FeatureSection />
+        <AboutUsSection />
         <ReviewsSection />
       </Container>
     </BackgroundComponent>
