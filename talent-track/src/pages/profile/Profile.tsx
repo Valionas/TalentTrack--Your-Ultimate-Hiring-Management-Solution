@@ -207,28 +207,30 @@ const Profile: React.FC = () => {
                 </TimelineSeparator>
                 <TimelineContent>
                   <Card sx={{ padding: 2, position: "relative" }}>
-                    <Button
-                      sx={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                      }}
-                      onClick={() => handleRemoveExperience(index)}
+                    <Box
+                      sx={{ display: "flex", justifyContent: "space-between" }}
                     >
-                      <DeleteIcon />
-                    </Button>
-                    <Typography variant="subtitle1">
-                      Job Title: {experience.name}
-                    </Typography>
-                    <Typography variant="subtitle2">
-                      Company: {experience.company}
-                    </Typography>
-                    <Typography variant="body2">
-                      From: {experience.from} - To: {experience.to}
-                    </Typography>
-                    <Typography variant="body2">
-                      {experience.description}
-                    </Typography>
+                      <Box>
+                        <Typography variant="subtitle1">
+                          Job Title: {experience.name}
+                        </Typography>
+                        <Typography variant="subtitle2">
+                          Company: {experience.company}
+                        </Typography>
+                        <Typography variant="body2">
+                          From: {experience.from} - To: {experience.to}
+                        </Typography>
+                        <Typography variant="body2">
+                          {experience.description}
+                        </Typography>
+                      </Box>
+                      <Button
+                        sx={{ minWidth: "auto" }}
+                        onClick={() => handleRemoveExperience(index)}
+                      >
+                        <DeleteIcon />
+                      </Button>
+                    </Box>
                   </Card>
                 </TimelineContent>
               </TimelineItem>
