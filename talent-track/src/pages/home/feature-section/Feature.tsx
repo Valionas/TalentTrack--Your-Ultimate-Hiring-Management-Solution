@@ -15,9 +15,9 @@ const Feature: React.FC<FeatureProps> = ({ icon, title, description }) => {
   return (
     <Grid item xs={12} md={4}>
       <AnimationBox
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1 }}
         sx={{
           display: "flex",
           flexDirection: "column",

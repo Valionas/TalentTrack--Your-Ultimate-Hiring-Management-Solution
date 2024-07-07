@@ -2,6 +2,7 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import ReviewCard from "./ReviewCard";
+import { motion, useInView } from "framer-motion";
 
 const reviews = [
   {
@@ -30,9 +31,20 @@ const reviews = [
   },
 ];
 
+const AnimationBox = motion(Box);
+
 const ReviewsSection: React.FC = () => {
+  const ref = React.useRef(null);
+  const inView = useInView(ref, { once: true });
+
   return (
-    <Box sx={{ background: "#1e3c72", color: "white", padding: "2rem 0" }}>
+    <AnimationBox
+      ref={ref}
+      initial={{ opacity: 0, x: -100 }}
+      animate={inView ? { opacity: 1, x: 0 } : {}}
+      transition={{ duration: 2 }}
+      sx={{ background: "#1e3c72", color: "white", padding: "2rem 0" }}
+    >
       <Typography variant="h4" align="center" gutterBottom>
         What Our Users Say
       </Typography>
@@ -43,7 +55,7 @@ const ReviewsSection: React.FC = () => {
           review={review}
         />
       ))}
-    </Box>
+    </AnimationBox>
   );
 };
 
