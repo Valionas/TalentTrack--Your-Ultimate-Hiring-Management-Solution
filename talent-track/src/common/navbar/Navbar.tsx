@@ -19,9 +19,10 @@ import {
   FaUserPlus,
   FaFileAlt,
 } from "react-icons/fa";
-
+import { MdOutlineWorkOutline } from "react-icons/md";
 const leftMenuItems = [
   { label: "Home", path: "/", icon: <FaHome size={20} /> },
+  { label: "Jobs", path: "/jobs", icon: <MdOutlineWorkOutline size={20} /> },
   { label: "Employees", path: "/employees", icon: <FaUsers size={20} /> },
   {
     label: "Contracts",
