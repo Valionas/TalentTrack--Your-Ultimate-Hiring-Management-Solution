@@ -8,6 +8,7 @@ import TermsAndConditions from "./pages/terms-and-conditions/TermsAndConditions"
 import Contracts from "./pages/contracts/Contracts";
 import Employees from "./pages/employees/Employees";
 import Navbar from "./common/navbar/Navbar";
+import Jobs from "./pages/jobs/Jobs";
 
 const App: React.FC = () => {
   return (
@@ -23,6 +24,7 @@ const App: React.FC = () => {
             path="/terms-and-conditions"
             element={<TermsAndConditions />}
           />
+          <Route path="/jobs" element={<Jobs />} />
           <Route path="/contracts" element={<Contracts />} />
           <Route path="/employees" element={<Employees />} />
         </Routes>

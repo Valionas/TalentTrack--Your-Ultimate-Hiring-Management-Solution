@@ -1,0 +1,48 @@
+// src/pages/jobs/jobsMockData.ts
+export const jobs = [
+    {
+      title: "Senior Front-End Developer",
+      companyName: "Yotpo",
+      companyLogo: "https://source.unsplash.com/random/56x56?company",
+      location: "Sofia",
+      type: "Hybrid",
+      datePosted: "5 days ago",
+      skills: ["React", "JavaScript", "Node.js", "TypeScript", "CSS"],
+    },
+    {
+      title: "Software Engineering Manager Frontend",
+      companyName: "PayRetailers",
+      companyLogo: "https://source.unsplash.com/random/56x56?company",
+      location: "Sofia",
+      type: "Hybrid",
+      datePosted: "5 days ago",
+      skills: ["React", "TypeScript"],
+    },
+    {
+      title: "Backend Developer",
+      companyName: "Tech Solutions",
+      companyLogo: "https://source.unsplash.com/random/56x56?company",
+      location: "New York",
+      type: "Remote",
+      datePosted: "3 days ago",
+      skills: ["Node.js", "Express", "MongoDB"],
+    },
+    {
+      title: "Full Stack Developer",
+      companyName: "Innovatech",
+      companyLogo: "https://source.unsplash.com/random/56x56?company",
+      location: "London",
+      type: "On-site",
+      datePosted: "1 week ago",
+      skills: ["React", "Node.js", "GraphQL"],
+    },
+    {
+      title: "Data Scientist",
+      companyName: "DataCorp",
+      companyLogo: "https://source.unsplash.com/random/56x56?company",
+      location: "Berlin",
+      type: "Hybrid",
+      datePosted: "2 weeks ago",
+      skills: ["Python", "Machine Learning", "TensorFlow"],
+    },
+];

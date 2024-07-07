@@ -10,6 +10,7 @@ export const employees: Employee[] = [
       country: 'USA',
       rating: 4.5,
       skills: ['JavaScript', 'React', 'Node.js'],
+      workExperience: null,
     },
     {
       id: 2,
@@ -20,6 +21,7 @@ export const employees: Employee[] = [
       country: 'Canada',
       rating: 4.8,
       skills: ['Nursing', 'Patient Care', 'EMR'],
+      workExperience: null,
     },
     {
       id: 3,
@@ -30,6 +32,7 @@ export const employees: Employee[] = [
       country: 'UK',
       rating: 4.6,
       skills: ['Accounting', 'Financial Analysis', 'Excel'],
+      workExperience: null,
     },
     {
       id: 4,
@@ -40,6 +43,7 @@ export const employees: Employee[] = [
       country: 'Australia',
       rating: 4.7,
       skills: ['Teaching', 'Curriculum Development', 'Classroom Management'],
+      workExperience: null,
     },
     {
       id: 5,
@@ -50,6 +54,7 @@ export const employees: Employee[] = [
       country: 'New Zealand',
       rating: 4.9,
       skills: ['Software Development', 'Java', 'Python'],
+      workExperience: null,
     },
     // Add more employees as needed
   ];

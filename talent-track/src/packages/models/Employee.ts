@@ -7,5 +7,14 @@ export interface Employee {
     country: string;
     rating: number;
     skills: string[];
-  }
+    workExperience: WorkExperience[] | null
+}
   
+
+export interface WorkExperience {
+    name: string;
+    from: string;
+    to: string;
+    description: string;
+    company: string;
+}
