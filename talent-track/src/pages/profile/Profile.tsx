@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Box,
   TextField,
@@ -14,7 +14,7 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Timeline,
   TimelineItem,
@@ -22,26 +22,30 @@ import {
   TimelineConnector,
   TimelineContent,
   TimelineDot,
-} from "@mui/lab";
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
+} from '@mui/lab';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 
-import AddExperienceDialog from "./AddExperienceDialog";
+import AddExperienceDialog from './AddExperienceDialog';
+import ConfirmationDialog from '../../common/confirmation-dialog/ConfirmationDialog';
+import { WorkExperience } from '../../packages/models/Employee';
 
-import { WorkExperience } from "../../packages/models/Employee";
-import ConfirmationDialog from "../../common/confirmation-dialog/ConfirmationDialog";
-
-const industries = ["Technology", "Healthcare", "Finance", "Education"];
-const countries = ["USA", "Canada", "UK", "Australia", "New Zealand"];
+const industries = ['Technology', 'Healthcare', 'Finance', 'Education'];
+const countries = ['USA', 'Canada', 'UK', 'Australia', 'New Zealand'];
+const languages = ['English', 'French', 'Spanish', 'German', 'Chinese'];
 
 const Profile: React.FC = () => {
   const [employee, setEmployee] = useState({
-    name: "",
-    industry: "",
-    avatar: "",
+    name: '',
+    industry: '',
+    avatar: '',
     age: 0,
-    country: "",
-    skills: "",
+    country: '',
+    skills: '',
+    email: '',
+    phone: '',
+    address: '',
+    language: '',
   });
 
   const [workExperience, setWorkExperience] = useState<WorkExperience[]>([]);
@@ -92,160 +96,236 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <Box sx={{ padding: 4, maxWidth: 800, margin: "auto" }}>
-      <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
-        <Grid container spacing={4}>
-          <Grid
-            item
-            xs={12}
-            md={4}
+    <Box sx={{ padding: 4, maxWidth: 1400, margin: 'auto' }}>
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={4}>
+          <Card sx={{ boxShadow: 3, borderRadius: 2, height: '100%' }}>
+            <CardContent>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                }}
+              >
+                <CardMedia
+                  component="img"
+                  image={employee.avatar || 'https://via.placeholder.com/150'}
+                  alt={employee.name}
+                  sx={{ width: 170, height: 170, borderRadius: '50%' }}
+                />
+                <CardActions>
+                  <Button variant="contained" component="label">
+                    Upload Avatar
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleImageChange}
+                    />
+                  </Button>
+                </CardActions>
+              </Box>
+              <Grid container spacing={2} sx={{ mt: 2 }}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Name"
+                    variant="outlined"
+                    name="name"
+                    value={employee.name}
+                    onChange={handleInputChange}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl variant="outlined" fullWidth>
+                    <InputLabel>Industry</InputLabel>
+                    <Select
+                      name="industry"
+                      value={employee.industry}
+                      onChange={handleSelectChange}
+                      label="Industry"
+                    >
+                      {industries.map((industry) => (
+                        <MenuItem key={industry} value={industry}>
+                          {industry}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Age"
+                    variant="outlined"
+                    type="number"
+                    name="age"
+                    value={employee.age}
+                    onChange={handleInputChange}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl variant="outlined" fullWidth>
+                    <InputLabel>Country</InputLabel>
+                    <Select
+                      name="country"
+                      value={employee.country}
+                      onChange={handleSelectChange}
+                      label="Country"
+                    >
+                      {countries.map((country) => (
+                        <MenuItem key={country} value={country}>
+                          {country}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl variant="outlined" fullWidth>
+                    <InputLabel>Language</InputLabel>
+                    <Select
+                      name="language"
+                      value={employee.language}
+                      onChange={handleSelectChange}
+                      label="Language"
+                    >
+                      {languages.map((language) => (
+                        <MenuItem key={language} value={language}>
+                          {language}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Email"
+                    variant="outlined"
+                    name="email"
+                    value={employee.email}
+                    onChange={handleInputChange}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Phone"
+                    variant="outlined"
+                    name="phone"
+                    value={employee.phone}
+                    onChange={handleInputChange}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Address"
+                    variant="outlined"
+                    name="address"
+                    value={employee.address}
+                    onChange={handleInputChange}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Skills"
+                    variant="outlined"
+                    multiline
+                    rows={4}
+                    name="skills"
+                    value={employee.skills}
+                    onChange={handleInputChange}
+                    fullWidth
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={8}>
+          <Card
             sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 2,
+              boxShadow: 3,
+              borderRadius: 2,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
-            <CardMedia
-              component="img"
-              image={employee.avatar || "https://via.placeholder.com/150"}
-              alt={employee.name}
-              sx={{ width: 170, height: 170, borderRadius: "50%" }}
-            />
-            <CardActions>
-              <Button variant="contained" component="label">
-                Upload Avatar
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-              </Button>
-            </CardActions>
-          </Grid>
-          <Grid item xs={12} md={8}>
-            <CardContent>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <TextField
-                  label="Name"
-                  variant="outlined"
-                  name="name"
-                  value={employee.name}
-                  onChange={handleInputChange}
-                  fullWidth
-                />
-                <FormControl variant="outlined" fullWidth>
-                  <InputLabel>Industry</InputLabel>
-                  <Select
-                    name="industry"
-                    value={employee.industry}
-                    onChange={handleSelectChange}
-                    label="Industry"
-                  >
-                    {industries.map((industry) => (
-                      <MenuItem key={industry} value={industry}>
-                        {industry}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Age"
-                  variant="outlined"
-                  type="number"
-                  name="age"
-                  value={employee.age}
-                  onChange={handleInputChange}
-                  fullWidth
-                />
-                <FormControl variant="outlined" fullWidth>
-                  <InputLabel>Country</InputLabel>
-                  <Select
-                    name="country"
-                    value={employee.country}
-                    onChange={handleSelectChange}
-                    label="Country"
-                  >
-                    {countries.map((country) => (
-                      <MenuItem key={country} value={country}>
-                        {country}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Skills"
-                  variant="outlined"
-                  multiline
-                  rows={4}
-                  name="skills"
-                  value={employee.skills}
-                  onChange={handleInputChange}
-                  fullWidth
-                />
+            <CardContent sx={{ flex: 1, overflowY: 'auto', maxHeight: '80vh' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Typography variant="h6" gutterBottom>
+                  Work Experience
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setDialogOpen(true)}
+                  sx={{ position: 'sticky', top: 0 }}
+                >
+                  Add Work Experience
+                </Button>
               </Box>
+              {workExperience.length === 0 ? (
+                <Typography variant="body1">
+                  No work experience added yet.
+                </Typography>
+              ) : (
+                <Timeline position="alternate">
+                  {workExperience.map((experience, index) => (
+                    <TimelineItem key={index}>
+                      <TimelineSeparator>
+                        <TimelineDot />
+                        <TimelineConnector />
+                      </TimelineSeparator>
+                      <TimelineContent>
+                        <Card sx={{ padding: 2, position: 'relative' }}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <Box>
+                              <Typography variant="subtitle1">
+                                Job Title: {experience.name}
+                              </Typography>
+                              <Typography variant="subtitle2">
+                                Company: {experience.company}
+                              </Typography>
+                              <Typography variant="body2">
+                                From: {experience.from} - To: {experience.to}
+                              </Typography>
+                              <Typography variant="body2">
+                                {experience.description}
+                              </Typography>
+                            </Box>
+                            <Button
+                              sx={{ minWidth: 'auto' }}
+                              onClick={() => handleRemoveExperience(index)}
+                            >
+                              <DeleteIcon />
+                            </Button>
+                          </Box>
+                        </Card>
+                      </TimelineContent>
+                    </TimelineItem>
+                  ))}
+                </Timeline>
+              )}
             </CardContent>
-          </Grid>
+          </Card>
         </Grid>
-      </Card>
-
-      <Card sx={{ boxShadow: 3, borderRadius: 2, marginTop: 4, padding: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Work Experience
-        </Typography>
-        {workExperience.length === 0 ? (
-          <Typography variant="body1">No work experience added yet.</Typography>
-        ) : (
-          <Timeline position="alternate">
-            {workExperience.map((experience, index) => (
-              <TimelineItem key={index}>
-                <TimelineSeparator>
-                  <TimelineDot />
-                  <TimelineConnector />
-                </TimelineSeparator>
-                <TimelineContent>
-                  <Card sx={{ padding: 2, position: "relative" }}>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
-                      <Box>
-                        <Typography variant="subtitle1">
-                          Job Title: {experience.name}
-                        </Typography>
-                        <Typography variant="subtitle2">
-                          Company: {experience.company}
-                        </Typography>
-                        <Typography variant="body2">
-                          From: {experience.from} - To: {experience.to}
-                        </Typography>
-                        <Typography variant="body2">
-                          {experience.description}
-                        </Typography>
-                      </Box>
-                      <Button
-                        sx={{ minWidth: "auto" }}
-                        onClick={() => handleRemoveExperience(index)}
-                      >
-                        <DeleteIcon />
-                      </Button>
-                    </Box>
-                  </Card>
-                </TimelineContent>
-              </TimelineItem>
-            ))}
-          </Timeline>
-        )}
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setDialogOpen(true)}
-          sx={{ marginTop: 2 }}
-        >
-          Add Work Experience
-        </Button>
-      </Card>
+      </Grid>
       <AddExperienceDialog
         dialogOpen={dialogOpen}
         setDialogOpen={setDialogOpen}
