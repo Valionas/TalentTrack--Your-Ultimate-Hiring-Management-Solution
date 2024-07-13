@@ -7,13 +7,36 @@ import {
   Box,
   Paper,
 } from '@mui/material';
+import { ErrorResponse, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import {
+  useLoginMutation,
+  AuthResponse,
+  LoginData,
+} from '../../api/services/authService';
 
 const Login: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [errors, setErrors] = useState<FormErrors>({ email: '', password: '' });
+
+  const { mutate: login, isLoading } = useLoginMutation({
+    onSuccess: (data: AuthResponse) => {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('email', data.email);
+      toast.success('Login successful!', {
+        position: 'bottom-right',
+      });
+      navigate('/profile');
+    },
+    onError: (error) => {
+      toast.error(error.message, {
+        position: 'bottom-right',
+      });
+    },
+  });
 
   const notifyError = (message: string) => {
     toast.error(message, {
@@ -62,7 +85,8 @@ const Login: React.FC = () => {
       if (passwordError) notifyError(passwordError);
     } else {
       // Submit form
-      console.log('Form submitted:', { email, password });
+      const loginData: LoginData = { email, password };
+      login(loginData);
     }
   };
 
@@ -114,6 +138,7 @@ const Login: React.FC = () => {
               fullWidth
               variant="contained"
               color="primary"
+              disabled={isLoading}
               sx={{ mt: 3, mb: 2 }}
             >
               Login
