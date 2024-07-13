@@ -1,5 +1,5 @@
-import React, { useState, useCallback, memo } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useCallback, memo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
@@ -8,8 +8,8 @@ import {
   MenuItem,
   Button,
   Box,
-} from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import {
   FaHome,
   FaUser,
@@ -18,29 +18,31 @@ import {
   FaSignInAlt,
   FaUserPlus,
   FaFileAlt,
-} from "react-icons/fa";
-import { MdOutlineWorkOutline } from "react-icons/md";
+  FaSignOutAlt,
+} from 'react-icons/fa';
+import { MdOutlineWorkOutline } from 'react-icons/md';
+import { logout, isLoggedIn } from '../../utils/authUtils';
+
 const leftMenuItems = [
-  { label: "Home", path: "/", icon: <FaHome size={20} /> },
-  { label: "Jobs", path: "/jobs", icon: <MdOutlineWorkOutline size={20} /> },
-  { label: "Employees", path: "/employees", icon: <FaUsers size={20} /> },
+  { label: 'Home', path: '/', icon: <FaHome size={20} /> },
+  { label: 'Jobs', path: '/jobs', icon: <MdOutlineWorkOutline size={20} /> },
+  { label: 'Employees', path: '/employees', icon: <FaUsers size={20} /> },
   {
-    label: "Contracts",
-    path: "/contracts",
+    label: 'Contracts',
+    path: '/contracts',
     icon: <FaFileContract size={20} />,
   },
-
-  { label: "Profile", path: "/profile", icon: <FaUser size={20} /> },
+  { label: 'Profile', path: '/profile', icon: <FaUser size={20} /> },
   {
-    label: "Terms & Conditions",
-    path: "/terms-and-conditions",
+    label: 'Terms & Conditions',
+    path: '/terms-and-conditions',
     icon: <FaFileAlt size={20} />,
   },
 ];
 
 const rightMenuItems = [
-  { label: "Login", path: "/login", icon: <FaSignInAlt size={20} /> },
-  { label: "Register", path: "/register", icon: <FaUserPlus size={20} /> },
+  { label: 'Login', path: '/login', icon: <FaSignInAlt size={20} /> },
+  { label: 'Register', path: '/register', icon: <FaUserPlus size={20} /> },
 ];
 
 type MenuItemLinkProps = {
@@ -60,7 +62,7 @@ const MenuItemLink: React.FC<MenuItemLinkProps> = ({
     onClick={onClick}
     component={Link}
     to={to}
-    sx={{ display: "flex", alignItems: "center", gap: 2 }}
+    sx={{ display: 'flex', alignItems: 'center', gap: 2 }}
   >
     {icon}
     <span>{children}</span>
@@ -69,6 +71,7 @@ const MenuItemLink: React.FC<MenuItemLinkProps> = ({
 
 const Navbar: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
 
   const handleMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -78,38 +81,54 @@ const Navbar: React.FC = () => {
     setAnchorEl(null);
   }, []);
 
+  const handleLogout = useCallback(() => {
+    logout();
+    navigate('/login');
+  }, [navigate]);
+
   return (
     <AppBar position="static">
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2 }}>
+      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
           {leftMenuItems.map(({ label, path, icon }) => (
             <Button
               key={path}
               color="inherit"
               component={Link}
               to={path}
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
             >
               {icon}
               {label}
             </Button>
           ))}
         </Box>
-        <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2 }}>
-          {rightMenuItems.map(({ label, path, icon }) => (
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
+          {isLoggedIn() ? (
             <Button
-              key={path}
               color="inherit"
-              component={Link}
-              to={path}
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              onClick={handleLogout}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
             >
-              {icon}
-              {label}
+              <FaSignOutAlt size={20} />
+              Logout
             </Button>
-          ))}
+          ) : (
+            rightMenuItems.map(({ label, path, icon }) => (
+              <Button
+                key={path}
+                color="inherit"
+                component={Link}
+                to={path}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                {icon}
+                {label}
+              </Button>
+            ))
+          )}
         </Box>
-        <Box sx={{ display: { xs: "flex", md: "none" } }}>
+        <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
           <IconButton
             edge="start"
             color="inherit"
@@ -124,13 +143,13 @@ const Navbar: React.FC = () => {
             id="menu-appbar"
             anchorEl={anchorEl}
             anchorOrigin={{
-              vertical: "top",
-              horizontal: "right",
+              vertical: 'top',
+              horizontal: 'right',
             }}
             keepMounted
             transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
+              vertical: 'top',
+              horizontal: 'right',
             }}
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
@@ -145,16 +164,28 @@ const Navbar: React.FC = () => {
                 {label}
               </MenuItemLink>
             ))}
-            {rightMenuItems.map(({ label, path, icon }) => (
-              <MenuItemLink
-                key={path}
-                to={path}
-                onClick={handleMenuClose}
-                icon={icon}
+            {isLoggedIn() ? (
+              <MenuItem
+                onClick={() => {
+                  handleLogout();
+                  handleMenuClose();
+                }}
               >
-                {label}
-              </MenuItemLink>
-            ))}
+                <FaSignOutAlt size={20} />
+                Logout
+              </MenuItem>
+            ) : (
+              rightMenuItems.map(({ label, path, icon }) => (
+                <MenuItemLink
+                  key={path}
+                  to={path}
+                  onClick={handleMenuClose}
+                  icon={icon}
+                >
+                  {label}
+                </MenuItemLink>
+              ))
+            )}
           </Menu>
         </Box>
       </Toolbar>

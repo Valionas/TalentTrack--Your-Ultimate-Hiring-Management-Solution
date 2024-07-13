@@ -7,10 +7,18 @@ import {
   Box,
   Paper,
 } from '@mui/material';
+import { ErrorResponse, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import {
+  AuthResponse,
+  RegisterData,
+  useRegisterMutation,
+} from '../../api/services/authService';
+
 const Register: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [repeatPassword, setRepeatPassword] = useState<string>('');
@@ -18,6 +26,22 @@ const Register: React.FC = () => {
     email: '',
     password: '',
     repeatPassword: '',
+  });
+
+  const { mutate: register, isLoading } = useRegisterMutation({
+    onSuccess: (data: AuthResponse) => {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('email', data.email);
+      toast.success('Registration successful!', {
+        position: 'bottom-right',
+      });
+      navigate('/jobs');
+    },
+    onError: (error) => {
+      toast.error(error.message, {
+        position: 'bottom-right',
+      });
+    },
   });
 
   const notifyError = (message: string) => {
@@ -89,7 +113,8 @@ const Register: React.FC = () => {
       if (repeatPasswordError) notifyError(repeatPasswordError);
     } else {
       // Submit form
-      console.log('Form submitted:', { email, password, repeatPassword });
+      const registerData: RegisterData = { email, password };
+      register(registerData);
     }
   };
 
@@ -155,6 +180,7 @@ const Register: React.FC = () => {
               fullWidth
               variant="contained"
               color="primary"
+              disabled={isLoading}
               sx={{ mt: 3, mb: 2 }}
             >
               Register
