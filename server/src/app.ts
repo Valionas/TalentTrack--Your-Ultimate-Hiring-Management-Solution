@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors, { CorsOptions } from 'cors';
 import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
+import jobRoutes from './routes/jobRoutes';
 
 dotenv.config();
 
@@ -39,6 +40,8 @@ app.options('*', cors(corsOptions));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/jobs', jobRoutes);
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

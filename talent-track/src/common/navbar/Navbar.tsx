@@ -23,34 +23,68 @@ import {
 import { MdOutlineWorkOutline } from 'react-icons/md';
 import { logout, isLoggedIn } from '../../utils/authUtils';
 
-const leftMenuItems = [
-  { label: 'Home', path: '/', icon: <FaHome size={20} /> },
-  { label: 'Jobs', path: '/jobs', icon: <MdOutlineWorkOutline size={20} /> },
-  { label: 'Employees', path: '/employees', icon: <FaUsers size={20} /> },
+type MenuItem = {
+  label: string;
+  path: string;
+  icon: JSX.Element;
+  protected: boolean;
+};
+
+const menuItems: MenuItem[] = [
+  { label: 'Home', path: '/', icon: <FaHome size={20} />, protected: false },
+  {
+    label: 'Jobs',
+    path: '/jobs',
+    icon: <MdOutlineWorkOutline size={20} />,
+    protected: false,
+  },
+  {
+    label: 'Employees',
+    path: '/employees',
+    icon: <FaUsers size={20} />,
+    protected: true,
+  },
   {
     label: 'Contracts',
     path: '/contracts',
     icon: <FaFileContract size={20} />,
+    protected: true,
   },
-  { label: 'Profile', path: '/profile', icon: <FaUser size={20} /> },
+  {
+    label: 'Profile',
+    path: '/profile',
+    icon: <FaUser size={20} />,
+    protected: true,
+  },
   {
     label: 'Terms & Conditions',
     path: '/terms-and-conditions',
     icon: <FaFileAlt size={20} />,
+    protected: false,
   },
 ];
 
-const rightMenuItems = [
-  { label: 'Login', path: '/login', icon: <FaSignInAlt size={20} /> },
-  { label: 'Register', path: '/register', icon: <FaUserPlus size={20} /> },
+const authItems: MenuItem[] = [
+  {
+    label: 'Login',
+    path: '/login',
+    icon: <FaSignInAlt size={20} />,
+    protected: false,
+  },
+  {
+    label: 'Register',
+    path: '/register',
+    icon: <FaUserPlus size={20} />,
+    protected: false,
+  },
 ];
 
-type MenuItemLinkProps = {
+interface MenuItemLinkProps {
   to: string;
   onClick: () => void;
   icon?: JSX.Element;
   children: React.ReactNode;
-};
+}
 
 const MenuItemLink: React.FC<MenuItemLinkProps> = ({
   to,
@@ -73,35 +107,37 @@ const Navbar: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
 
-  const handleMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  }, []);
-
-  const handleMenuClose = useCallback(() => {
-    setAnchorEl(null);
-  }, []);
-
+  const handleMenuOpen = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget),
+    [],
+  );
+  const handleMenuClose = useCallback(() => setAnchorEl(null), []);
   const handleLogout = useCallback(() => {
     logout();
     navigate('/login');
   }, [navigate]);
 
+  const renderMenuItems = (items: MenuItem[]) =>
+    items.map(({ label, path, icon, protected: isProtected }) =>
+      !isProtected || isLoggedIn() ? (
+        <Button
+          key={path}
+          color="inherit"
+          component={Link}
+          to={path}
+          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+        >
+          {icon}
+          {label}
+        </Button>
+      ) : null,
+    );
+
   return (
     <AppBar position="static">
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
-          {leftMenuItems.map(({ label, path, icon }) => (
-            <Button
-              key={path}
-              color="inherit"
-              component={Link}
-              to={path}
-              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-            >
-              {icon}
-              {label}
-            </Button>
-          ))}
+          {renderMenuItems(menuItems)}
         </Box>
         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
           {isLoggedIn() ? (
@@ -114,18 +150,7 @@ const Navbar: React.FC = () => {
               Logout
             </Button>
           ) : (
-            rightMenuItems.map(({ label, path, icon }) => (
-              <Button
-                key={path}
-                color="inherit"
-                component={Link}
-                to={path}
-                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                {icon}
-                {label}
-              </Button>
-            ))
+            renderMenuItems(authItems)
           )}
         </Box>
         <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
@@ -133,37 +158,30 @@ const Navbar: React.FC = () => {
             edge="start"
             color="inherit"
             aria-label="menu"
-            aria-controls="menu-appbar"
-            aria-haspopup="true"
             onClick={handleMenuOpen}
           >
             <MenuIcon />
           </IconButton>
           <Menu
-            id="menu-appbar"
             anchorEl={anchorEl}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
             keepMounted
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
           >
-            {leftMenuItems.map(({ label, path, icon }) => (
-              <MenuItemLink
-                key={path}
-                to={path}
-                onClick={handleMenuClose}
-                icon={icon}
-              >
-                {label}
-              </MenuItemLink>
-            ))}
+            {menuItems.map(({ label, path, icon, protected: isProtected }) =>
+              !isProtected || isLoggedIn() ? (
+                <MenuItemLink
+                  key={path}
+                  to={path}
+                  onClick={handleMenuClose}
+                  icon={icon}
+                >
+                  {label}
+                </MenuItemLink>
+              ) : null,
+            )}
             {isLoggedIn() ? (
               <MenuItem
                 onClick={() => {
@@ -175,7 +193,7 @@ const Navbar: React.FC = () => {
                 Logout
               </MenuItem>
             ) : (
-              rightMenuItems.map(({ label, path, icon }) => (
+              authItems.map(({ label, path, icon }) => (
                 <MenuItemLink
                   key={path}
                   to={path}

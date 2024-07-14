@@ -1,14 +1,6 @@
-// src/packages/models/Job.ts
-export enum Benefit {
-    HealthInsurance = 'Health Insurance',
-    RemoteWork = 'Remote Work',
-    GymMembership = 'Gym Membership',
-    StockOptions = 'Stock Options',
-    FlexibleHours = 'Flexible Hours',
-    RetirementPlan = 'Retirement Plan',
-  }
+
   
-  export interface Job {
+export interface Job {
     title: string;
     companyName: string;
     companyLogo: string;
@@ -21,8 +13,11 @@ export enum Benefit {
     experience: string;
     contactEmail: string;
     category: string;
-    benefits: Benefit[];
+    benefits: string[];
     applicationDeadline: string;
     jobId: string;
-  }
+}
   
+export interface JobResponse extends Job {
+  _id: string;
+}
