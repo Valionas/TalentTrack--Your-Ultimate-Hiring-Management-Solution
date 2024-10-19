@@ -12,13 +12,13 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import {
   FaHome,
-  FaUser,
   FaFileContract,
   FaUsers,
   FaSignInAlt,
   FaUserPlus,
   FaFileAlt,
   FaSignOutAlt,
+  FaUser,
 } from 'react-icons/fa';
 import { MdOutlineWorkOutline } from 'react-icons/md';
 import { logout, isLoggedIn } from '../../utils/authUtils';
@@ -48,12 +48,6 @@ const menuItems: MenuItem[] = [
     label: 'Contracts',
     path: '/contracts',
     icon: <FaFileContract size={20} />,
-    protected: true,
-  },
-  {
-    label: 'Profile',
-    path: '/profile',
-    icon: <FaUser size={20} />,
     protected: true,
   },
   {
@@ -140,6 +134,17 @@ const Navbar: React.FC = () => {
           {renderMenuItems(menuItems)}
         </Box>
         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
+          {isLoggedIn() && (
+            <Button
+              color="inherit"
+              component={Link}
+              to="/profile"
+              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+            >
+              <FaUser size={20} />
+              Profile
+            </Button>
+          )}
           {isLoggedIn() ? (
             <Button
               color="inherit"
@@ -181,6 +186,15 @@ const Navbar: React.FC = () => {
                   {label}
                 </MenuItemLink>
               ) : null,
+            )}
+            {isLoggedIn() && (
+              <MenuItemLink
+                to="/profile"
+                onClick={handleMenuClose}
+                icon={<FaUser size={20} />}
+              >
+                Profile
+              </MenuItemLink>
             )}
             {isLoggedIn() ? (
               <MenuItem

@@ -1,5 +1,3 @@
-
-  
 export interface Job {
     title: string;
     companyName: string;

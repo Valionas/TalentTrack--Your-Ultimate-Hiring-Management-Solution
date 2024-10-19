@@ -1,9 +1,10 @@
-import { Employee } from "../../packages/models/Employee";
+import { UserProfileResponse } from "../../packages/models/UserProfile";
 
-export const employees: Employee[] = [
+export const employees: UserProfileResponse[] = [
     {
-      id: 1,
+      _id: 1,
       name: 'John Doe',
+      email: 'john.doe@example.com',
       industry: 'Technology',
       avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
       age: 30,
@@ -13,8 +14,9 @@ export const employees: Employee[] = [
       workExperience: null,
     },
     {
-      id: 2,
+      _id: 2,
       name: 'Jane Smith',
+      email: 'jane.smith@example.com',
       industry: 'Healthcare',
       avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
       age: 28,
@@ -24,8 +26,9 @@ export const employees: Employee[] = [
       workExperience: null,
     },
     {
-      id: 3,
+      _id: 3,
       name: 'Emily Johnson',
+      email: 'emily.johnson@example.com',
       industry: 'Finance',
       avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
       age: 35,
@@ -35,8 +38,9 @@ export const employees: Employee[] = [
       workExperience: null,
     },
     {
-      id: 4,
+      _id: 4,
       name: 'Michael Brown',
+      email: 'michael.brown@example.com',
       industry: 'Education',
       avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
       age: 40,
@@ -46,8 +50,9 @@ export const employees: Employee[] = [
       workExperience: null,
     },
     {
-      id: 5,
+      _id: 5,
       name: 'Emma Wilson',
+      email: 'emma.wilson@example.com',
       industry: 'Technology',
       avatar: 'https://randomuser.me/api/portraits/women/3.jpg',
       age: 25,
@@ -57,4 +62,4 @@ export const employees: Employee[] = [
       workExperience: null,
     },
     // Add more employees as needed
-  ];
+];
