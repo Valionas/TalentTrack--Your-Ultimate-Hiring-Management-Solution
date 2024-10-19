@@ -1,3 +1,4 @@
+import { ErrorResponseModel } from "../../packages/models/Error";
 import axiosClient from "../axiosClient";
 import { useMutation, UseMutationOptions, UseMutationResult } from "react-query";
 
@@ -18,13 +19,11 @@ export interface AuthResponse {
   token: string;
 }
 
-export interface ErrorResponse {
-  message: string;
-}
+
 
 // Register user mutation
-export const useRegisterMutation = (options?: UseMutationOptions<AuthResponse, ErrorResponse, RegisterData>): UseMutationResult<AuthResponse, ErrorResponse, RegisterData> =>
-  useMutation<AuthResponse, ErrorResponse, RegisterData>(registerUser, options);
+export const useRegisterMutation = (options?: UseMutationOptions<AuthResponse, ErrorResponseModel, RegisterData>): UseMutationResult<AuthResponse, ErrorResponseModel, RegisterData> =>
+  useMutation<AuthResponse, ErrorResponseModel, RegisterData>(registerUser, options);
 
 export const registerUser = async (data: RegisterData): Promise<AuthResponse> => {
   try {
@@ -36,8 +35,8 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
 };
 
 // Login user mutation
-export const useLoginMutation = (options?: UseMutationOptions<AuthResponse, ErrorResponse, LoginData>): UseMutationResult<AuthResponse, ErrorResponse, LoginData> =>
-  useMutation<AuthResponse, ErrorResponse, LoginData>(loginUser, options);
+export const useLoginMutation = (options?: UseMutationOptions<AuthResponse, ErrorResponseModel, LoginData>): UseMutationResult<AuthResponse, ErrorResponseModel, LoginData> =>
+  useMutation<AuthResponse, ErrorResponseModel, LoginData>(loginUser, options);
 
 export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
   try {

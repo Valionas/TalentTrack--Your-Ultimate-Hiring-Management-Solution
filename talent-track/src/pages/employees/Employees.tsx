@@ -1,4 +1,3 @@
-// src/pages/employees/Employees.tsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -12,9 +11,11 @@ import {
   ListItemText,
   Grid,
   OutlinedInput,
+  CircularProgress,
+  Typography,
 } from '@mui/material';
-import { employees as employeeData } from './mockData';
-import { Employee } from '../../packages/models/Employee';
+import { useAllUsersQuery } from '../../api/services/userService';
+import { UserProfileResponse } from '../../packages/models/UserProfile';
 import EmployeeCard from './EmployeeCard';
 
 const industries = ['Technology', 'Healthcare', 'Finance', 'Education'];
@@ -23,11 +24,18 @@ const Employees: React.FC = () => {
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
+  const [filteredEmployees, setFilteredEmployees] = useState<
+    UserProfileResponse[]
+  >([]); // Update type here
+
+  // Fetch all employees using the custom React Query hook
+  const { data: employees, isLoading, isError } = useAllUsersQuery();
 
   useEffect(() => {
-    filterEmployees(search, selectedIndustries, sortOrder);
-  }, []);
+    if (employees) {
+      filterEmployees(search, selectedIndustries, sortOrder);
+    }
+  }, [employees, search, selectedIndustries, sortOrder]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -51,9 +59,12 @@ const Employees: React.FC = () => {
     industries: string[],
     order: string,
   ) => {
-    let filtered = employeeData.filter(
+    if (!employees) return;
+
+    let filtered = employees.filter(
       (employee) =>
         employee.name.toLowerCase().includes(searchText.toLowerCase()) &&
+        employee.industry &&
         (industries.length === 0 || industries.includes(employee.industry)),
     );
 
@@ -63,8 +74,25 @@ const Employees: React.FC = () => {
       filtered.sort((a, b) => b.name.localeCompare(a.name));
     }
 
-    setFilteredEmployees(filtered);
+    setFilteredEmployees(filtered); // Make sure filtered is UserProfileResponse[]
   };
+
+  if (isLoading) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return <Typography variant="h6">Error fetching employees</Typography>;
+  }
 
   return (
     <Box sx={{ py: 2, px: 2 }}>
@@ -115,7 +143,7 @@ const Employees: React.FC = () => {
       <Box sx={{ mt: 2 }}>
         <Grid container spacing={2}>
           {filteredEmployees.map((employee) => (
-            <Grid item xs={12} sm={6} md={4} key={employee.id}>
+            <Grid item xs={12} sm={6} md={4} key={employee._id}>
               <EmployeeCard employee={employee} />
             </Grid>
           ))}

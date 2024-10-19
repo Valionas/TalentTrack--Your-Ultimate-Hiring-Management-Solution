@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Box,
   TextField,
@@ -6,12 +6,12 @@ import {
   DialogActions,
   Typography,
   Dialog,
-} from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { WorkExperience } from "../../packages/models/Employee";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { WorkExperience } from '../../packages/models/UserProfile';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
   onAdd,
@@ -20,11 +20,11 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
   setDialogOpen,
 }) => {
   const [newExperience, setNewExperience] = useState<WorkExperience>({
-    name: "",
-    company: "",
-    from: "",
-    to: "",
-    description: "",
+    name: '',
+    company: '',
+    from: '',
+    to: '',
+    description: '',
   });
 
   const [errors, setErrors] = useState({
@@ -37,14 +37,14 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
   const handleExperienceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setNewExperience({ ...newExperience, [name]: value });
-    setErrors({ ...errors, [name]: value === "" });
+    setErrors({ ...errors, [name]: value === '' });
   };
 
   const handleDateChange = (name: string, date: Date | null) => {
     if (date) {
       setNewExperience({
         ...newExperience,
-        [name]: date.toISOString().split("T")[0],
+        [name]: date.toISOString().split('T')[0],
       });
       setErrors({ ...errors, [name]: date === null });
     }
@@ -57,10 +57,10 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
       onClose();
     } else {
       setErrors({
-        name: name === "",
-        company: company === "",
-        from: from === "",
-        to: to === "",
+        name: name === '',
+        company: company === '',
+        from: from === '',
+        to: to === '',
       });
     }
   };
@@ -71,7 +71,7 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
         <Typography variant="h6" gutterBottom>
           Add Work Experience
         </Typography>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TextField
             label="Job Title"
             variant="outlined"
@@ -80,7 +80,7 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
             onChange={handleExperienceChange}
             fullWidth
             error={errors.name}
-            helperText={errors.name && "Job title is required"}
+            helperText={errors.name && 'Job title is required'}
           />
           <TextField
             label="Company"
@@ -90,16 +90,16 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
             onChange={handleExperienceChange}
             fullWidth
             error={errors.company}
-            helperText={errors.company && "Company name is required"}
+            helperText={errors.company && 'Company name is required'}
           />
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DatePicker
               label="From"
-              onChange={(date) => handleDateChange("from", date)}
+              onChange={(date) => handleDateChange('from', date)}
             />
             <DatePicker
               label="To"
-              onChange={(date) => handleDateChange("to", date)}
+              onChange={(date) => handleDateChange('to', date)}
             />
           </LocalizationProvider>
 
