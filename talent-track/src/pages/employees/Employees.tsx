@@ -24,9 +24,7 @@ const Employees: React.FC = () => {
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<
-    UserProfileResponse[]
-  >([]); // Update type here
+  const [filteredEmployees, setFilteredEmployees] = useState<UserProfileResponse[]>([]);
 
   // Fetch all employees using the custom React Query hook
   const { data: employees, isLoading, isError } = useAllUsersQuery();
@@ -54,37 +52,39 @@ const Employees: React.FC = () => {
     filterEmployees(search, value, sortOrder);
   };
 
-  const filterEmployees = (
-    searchText: string,
-    industries: string[],
-    order: string,
-  ) => {
+  const filterEmployees = (searchText: string, industries: string[], order: string) => {
     if (!employees) return;
 
-    let filtered = employees.filter(
-      (employee) =>
-        employee.name.toLowerCase().includes(searchText.toLowerCase()) &&
+    let filtered = employees.filter((employee) => {
+      // Combine firstName and lastName into a fullName string
+      const fullName = `${employee.firstName || ''} ${employee.lastName || ''}`.trim();
+      return (
+        fullName.toLowerCase().includes(searchText.toLowerCase()) &&
         employee.industry &&
-        (industries.length === 0 || industries.includes(employee.industry)),
-    );
+        (industries.length === 0 || industries.includes(employee.industry))
+      );
+    });
 
     if (order === 'asc') {
-      filtered.sort((a, b) => a.name.localeCompare(b.name));
+      filtered.sort((a, b) => {
+        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim();
+        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim();
+        return nameA.localeCompare(nameB);
+      });
     } else {
-      filtered.sort((a, b) => b.name.localeCompare(a.name));
+      filtered.sort((a, b) => {
+        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim();
+        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim();
+        return nameB.localeCompare(nameA);
+      });
     }
 
-    setFilteredEmployees(filtered); // Make sure filtered is UserProfileResponse[]
+    setFilteredEmployees(filtered);
   };
 
   if (isLoading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="100vh"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
         <CircularProgress />
       </Box>
     );
@@ -129,11 +129,7 @@ const Employees: React.FC = () => {
         <Grid item xs={12} sm={6} md={2}>
           <FormControl fullWidth variant="outlined">
             <InputLabel>Sort By</InputLabel>
-            <Select
-              value={sortOrder}
-              onChange={handleSortChange}
-              label="Sort By"
-            >
+            <Select value={sortOrder} onChange={handleSortChange} label="Sort By">
               <MenuItem value="asc">Name Ascending</MenuItem>
               <MenuItem value="desc">Name Descending</MenuItem>
             </Select>

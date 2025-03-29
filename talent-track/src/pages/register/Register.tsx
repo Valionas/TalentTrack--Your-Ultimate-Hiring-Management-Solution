@@ -1,3 +1,4 @@
+// components/Register.tsx
 import React, { useState } from 'react';
 import {
   Container,
@@ -17,12 +18,24 @@ import {
   useRegisterMutation,
 } from '../../api/services/authService';
 
+interface FormErrors {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  repeatPassword: string;
+}
+
 const Register: React.FC = () => {
   const navigate = useNavigate();
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [repeatPassword, setRepeatPassword] = useState<string>('');
   const [errors, setErrors] = useState<FormErrors>({
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     repeatPassword: '',
@@ -32,12 +45,13 @@ const Register: React.FC = () => {
     onSuccess: (data: AuthResponse) => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('email', data.email);
+      localStorage.setItem('currentUser', data.id);
       toast.success('Registration successful!', {
         position: 'bottom-right',
       });
       navigate('/jobs');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message, {
         position: 'bottom-right',
       });
@@ -66,56 +80,40 @@ const Register: React.FC = () => {
     return repeatPassword === password ? '' : 'Passwords do not match';
   };
 
-  const handleEmailChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ): void => {
-    const value = event.target.value;
-    setEmail(value);
-    setErrors((prevErrors) => ({ ...prevErrors, email: validateEmail(value) }));
-  };
-
-  const handlePasswordChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ): void => {
-    const value = event.target.value;
-    setPassword(value);
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      password: validatePassword(value),
-    }));
-  };
-
-  const handleRepeatPasswordChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ): void => {
-    const value = event.target.value;
-    setRepeatPassword(value);
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      repeatPassword: validateRepeatPassword(value),
-    }));
+  const validateNameField = (name: string, fieldName: string): string => {
+    if (!name) return `${fieldName} is required`;
+    return '';
   };
 
   const handleSubmit = (event: React.FormEvent): void => {
     event.preventDefault();
+
+    // Validate all fields
+    const firstNameError = validateNameField(firstName, 'First name');
+    const lastNameError = validateNameField(lastName, 'Last name');
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
     const repeatPasswordError = validateRepeatPassword(repeatPassword);
 
-    if (emailError || passwordError || repeatPasswordError) {
+    if (firstNameError || lastNameError || emailError || passwordError || repeatPasswordError) {
       setErrors({
+        firstName: firstNameError,
+        lastName: lastNameError,
         email: emailError,
         password: passwordError,
         repeatPassword: repeatPasswordError,
       });
+      if (firstNameError) notifyError(firstNameError);
+      if (lastNameError) notifyError(lastNameError);
       if (emailError) notifyError(emailError);
       if (passwordError) notifyError(passwordError);
       if (repeatPasswordError) notifyError(repeatPasswordError);
-    } else {
-      // Submit form
-      const registerData: RegisterData = { email, password };
-      register(registerData);
+      return;
     }
+
+    // Submit form with all fields
+    const registerData: RegisterData = { firstName, lastName, email, password };
+    register(registerData);
   };
 
   return (
@@ -125,12 +123,35 @@ const Register: React.FC = () => {
           <Typography component="h1" variant="h5">
             Register
           </Typography>
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            noValidate
-            sx={{ mt: 1 }}
-          >
+          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+            <TextField
+              variant="outlined"
+              margin="normal"
+              required
+              fullWidth
+              id="firstName"
+              label="First Name"
+              name="firstName"
+              autoComplete="given-name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              error={Boolean(errors.firstName)}
+              helperText={errors.firstName}
+            />
+            <TextField
+              variant="outlined"
+              margin="normal"
+              required
+              fullWidth
+              id="lastName"
+              label="Last Name"
+              name="lastName"
+              autoComplete="family-name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              error={Boolean(errors.lastName)}
+              helperText={errors.lastName}
+            />
             <TextField
               variant="outlined"
               margin="normal"
@@ -140,9 +161,8 @@ const Register: React.FC = () => {
               label="Email Address"
               name="email"
               autoComplete="email"
-              autoFocus
               value={email}
-              onChange={handleEmailChange}
+              onChange={(e) => setEmail(e.target.value)}
               error={Boolean(errors.email)}
               helperText={errors.email}
             />
@@ -157,7 +177,7 @@ const Register: React.FC = () => {
               id="password"
               autoComplete="current-password"
               value={password}
-              onChange={handlePasswordChange}
+              onChange={(e) => setPassword(e.target.value)}
               error={Boolean(errors.password)}
               helperText={errors.password}
             />
@@ -171,7 +191,7 @@ const Register: React.FC = () => {
               type="password"
               id="repeatPassword"
               value={repeatPassword}
-              onChange={handleRepeatPasswordChange}
+              onChange={(e) => setRepeatPassword(e.target.value)}
               error={Boolean(errors.repeatPassword)}
               helperText={errors.repeatPassword}
             />
@@ -191,11 +211,5 @@ const Register: React.FC = () => {
     </Container>
   );
 };
-
-interface FormErrors {
-  email: string;
-  password: string;
-  repeatPassword: string;
-}
 
 export default Register;

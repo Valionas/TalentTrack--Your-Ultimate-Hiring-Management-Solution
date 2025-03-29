@@ -4,7 +4,7 @@ import { UserProfile, UserProfileResponse } from '../../packages/models/UserProf
 import { ErrorResponseModel } from '../../packages/models/Error';
 
 // Fetch all users query
-export const useAllUsersQuery = (options?: UseQueryOptions<UserProfileResponse[], ErrorResponseModel>): UseQueryResult<UserProfileResponse[], ErrorResponseModel> => 
+export const useAllUsersQuery = (options?: UseQueryOptions<UserProfileResponse[], ErrorResponseModel>): UseQueryResult<UserProfileResponse[], ErrorResponseModel> =>
   useQuery<UserProfileResponse[], ErrorResponseModel>('allUsers', fetchAllUsers, options);
 
 export const fetchAllUsers = async (): Promise<UserProfileResponse[]> => {

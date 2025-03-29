@@ -1,5 +1,6 @@
 export interface UserProfile {
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     avatar?: string;
     age?: number;
@@ -16,7 +17,7 @@ export interface UserProfile {
 export interface UserProfileResponse extends UserProfile {
     _id: string | number;
 }
-  
+
 export interface WorkExperience {
     name: string;
     from: string;

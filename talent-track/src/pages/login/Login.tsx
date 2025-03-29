@@ -26,6 +26,8 @@ const Login: React.FC = () => {
     onSuccess: (data: AuthResponse) => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('email', data.email);
+      localStorage.setItem('currentUser', data.id);
+
       toast.success('Login successful!', {
         position: 'bottom-right',
       });

@@ -16,6 +16,7 @@ export interface Job extends Document {
   benefits: string[];
   applicationDeadline: string;
   jobId: string;
+  createdBy: string; // Added property to track the owner's email
 }
 
 const JobSchema: Schema = new Schema({
@@ -34,6 +35,7 @@ const JobSchema: Schema = new Schema({
   benefits: { type: [String], required: true },
   applicationDeadline: { type: String, required: true },
   jobId: { type: String, required: true },
+  createdBy: { type: String, required: true }, // New field for owner identification
 });
 
 const JobModel = mongoose.model<Job>('Job', JobSchema);

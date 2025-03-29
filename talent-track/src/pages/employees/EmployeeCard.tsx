@@ -1,4 +1,3 @@
-// src/pages/employees/EmployeeCard.tsx
 import React from 'react';
 import { Card, CardContent, Typography, Avatar, Box } from '@mui/material';
 import Rating from '@mui/material/Rating';
@@ -20,11 +19,13 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee }) => {
     >
       <Avatar
         src={employee.avatar}
-        alt={employee.name}
+        alt={`${employee.firstName} ${employee.lastName}`}
         sx={{ width: 80, height: 80, margin: 2 }}
       />
       <CardContent>
-        <Typography variant="h6">{employee.name}</Typography>
+        <Typography variant="h6">
+          {employee.firstName} {employee.lastName}
+        </Typography>
         <Typography variant="body2" color="text.secondary">
           Industry: {employee.industry}
         </Typography>
@@ -40,7 +41,6 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee }) => {
           </Typography>
           <Rating value={employee.rating} precision={0.5} readOnly />
         </Box>
-
         <Typography variant="body2" color="text.secondary">
           Skills: {employee.skills ? employee.skills.join(', ') : '-'}
         </Typography>

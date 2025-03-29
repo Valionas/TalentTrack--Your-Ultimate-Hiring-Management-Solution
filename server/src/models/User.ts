@@ -1,3 +1,4 @@
+// models/User.ts
 import mongoose, { Document, Schema } from 'mongoose';
 
 // Define the WorkExperience interface
@@ -9,11 +10,12 @@ export interface WorkExperience {
   company: string;
 }
 
-// Define the IUser interface
+// Update the IUser interface to include firstName and lastName
 export interface IUser extends Document {
   email: string;
   password: string;
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   age?: number;
   industry?: string;
   country?: string;
@@ -34,20 +36,21 @@ const WorkExperienceSchema: Schema = new Schema({
   company: { type: String, required: true },
 });
 
-// Define the main User schema
+// Define the main User schema with firstName and lastName fields
 const UserSchema: Schema = new Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  name: { type: String },
+  firstName: { type: String }, // New field for first name
+  lastName: { type: String },  // New field for last name
   age: { type: Number },
   industry: { type: String },
   country: { type: String },
   language: { type: String },
   phone: { type: String },
   address: { type: String },
-  skills: { type: [String] },  // Array of skills
-  avatar: { type: String, required: false },    // Avatar image URL
-  workExperience: { type: [WorkExperienceSchema], required: false }, // Reference the WorkExperienceSchema
+  skills: { type: [String] },
+  avatar: { type: String, required: false },
+  workExperience: { type: [WorkExperienceSchema], required: false },
 });
 
 const User = mongoose.model<IUser>('User', UserSchema);

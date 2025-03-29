@@ -19,7 +19,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import { MdOutlineLibraryAdd } from 'react-icons/md';
 import JobCard from './JobCard';
 import 'react-toastify/dist/ReactToastify.css';
-import { useJobsQuery } from '../../api/services/jobService';
+import { useCreateJobMutation, useJobsQuery, useDeleteJobMutation, useUpdateJobMutation } from '../../api/services/jobService';
 import { isLoggedIn } from '../../utils/authUtils';
 
 import CreateUpdateJob from './CreateUpdateJob';
@@ -33,9 +33,39 @@ const Jobs: React.FC = () => {
   const [additionalSkills, setAdditionalSkills] = useState<string[]>([]);
   const [selectedBenefits, setSelectedBenefits] = useState<string[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
+  // State for currently selected job (for update mode)
+  const [selectedJob, setSelectedJob] = useState<JobResponse | null>(null);
 
   const theme = useTheme();
-  const { data: jobs, isLoading } = useJobsQuery();
+  const { data: jobs, isLoading, refetch: loadJobs } = useJobsQuery();
+
+  const { mutate: createJobMutation } = useCreateJobMutation({
+    onSuccess: () => {
+      loadJobs();
+    },
+    onError: (error: any) => {
+      console.error('Error creating job', error);
+    },
+  });
+
+  const { mutate: deleteJobMutation } = useDeleteJobMutation({
+    onSuccess: () => {
+      loadJobs();
+    },
+    onError: (error: any) => {
+      console.error('Error deleting job', error);
+    },
+  });
+
+  const { mutate: updateJobMutation } = useUpdateJobMutation({
+    onSuccess: (updatedJob) => {
+      console.log('Job updated successfully:', updatedJob);
+      loadJobs();
+    },
+    onError: (error) => {
+      console.error('Error updating job:', error);
+    },
+  });
 
   useEffect(() => {
     if (jobs) {
@@ -84,7 +114,7 @@ const Jobs: React.FC = () => {
   ) => {
     if (!jobs) return;
 
-    let filteredJobs = jobs.filter(
+    let filtered = jobs.filter(
       (job) =>
         job.title.toLowerCase().includes(term) ||
         job.companyName.toLowerCase().includes(term) ||
@@ -94,18 +124,18 @@ const Jobs: React.FC = () => {
     const allSkills = [...skills, ...additionalSkills];
 
     if (allSkills.length > 0) {
-      filteredJobs = filteredJobs.filter((job) =>
+      filtered = filtered.filter((job) =>
         allSkills.every((skill) => job.skills.includes(skill)),
       );
     }
 
     if (benefits.length > 0) {
-      filteredJobs = filteredJobs.filter((job) =>
+      filtered = filtered.filter((job) =>
         benefits.every((benefit) => job.benefits.includes(benefit)),
       );
     }
 
-    sortJobs(filteredJobs, sortOrder);
+    sortJobs(filtered, sortOrder);
   };
 
   const sortJobs = (jobs: JobResponse[], order: string) => {
@@ -131,17 +161,29 @@ const Jobs: React.FC = () => {
     new Set(jobs?.flatMap((job) => job.benefits) || []),
   );
 
-  const handleOpenDialog = () => {
+  const handleOpenDialogForCreate = () => {
+    setSelectedJob(null); // Clear selected job for new job creation
+    setOpenDialog(true);
+  };
+
+  const handleOpenDialogForUpdate = (job: JobResponse) => {
+    setSelectedJob(job);
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
+    setSelectedJob(null);
   };
 
   const handleSaveJob = (newJob: Job) => {
-    // Update the state with the new job. You might want to update the backend as well.
-    setFilteredJobs((prevJobs) => [...prevJobs, newJob as JobResponse]);
+    if (selectedJob) {
+      // Update mode
+      updateJobMutation({ id: selectedJob._id, data: newJob });
+    } else {
+      // Create mode
+      createJobMutation(newJob);
+    }
     handleCloseDialog();
   };
 
@@ -232,7 +274,7 @@ const Jobs: React.FC = () => {
             variant="contained"
             color="primary"
             sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-            onClick={handleOpenDialog}
+            onClick={handleOpenDialogForCreate}
           >
             <MdOutlineLibraryAdd size={20} />
             Create Job
@@ -245,13 +287,21 @@ const Jobs: React.FC = () => {
             <CircularProgress />
           </Box>
         ) : (
-          filteredJobs.map((job, index) => <JobCard key={index} job={job} />)
+          filteredJobs.map((job, index) => (
+            <JobCard
+              key={index}
+              job={job}
+              onDelete={deleteJobMutation}
+              onUpdate={handleOpenDialogForUpdate}
+            />
+          ))
         )}
       </Box>
       <CreateUpdateJob
         open={openDialog}
         onClose={handleCloseDialog}
         onSave={handleSaveJob}
+        job={selectedJob} // Pass the currently selected job (if any) to the dialog
       />
     </Box>
   );

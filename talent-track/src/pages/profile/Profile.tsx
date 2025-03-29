@@ -45,8 +45,10 @@ const languages = ['English', 'French', 'Spanish', 'German', 'Chinese'];
 const Profile: React.FC = () => {
   const navigate = useNavigate();
 
+  // Update initial state: remove name and include firstName and lastName
   const [employee, setEmployee] = useState<UserProfile>({
-    name: '',
+    firstName: '',
+    lastName: '',
     industry: '',
     avatar: '',
     age: 0,
@@ -62,16 +64,10 @@ const Profile: React.FC = () => {
   const [workExperience, setWorkExperience] = useState<WorkExperience[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
-  const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<
-    number | null
-  >(null);
+  const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null);
 
   // Fetch user profile using react-query
-  const {
-    data: profileData,
-    isLoading: profileLoading,
-    isError,
-  } = useUserProfileQuery();
+  const { data: profileData, isLoading: profileLoading, isError } = useUserProfileQuery();
 
   // Update user profile mutation
   const { mutate: updateProfile, isLoading: updatingProfile } =
@@ -110,7 +106,7 @@ const Profile: React.FC = () => {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const base64Image = await convertToBase64(file); // Add a helper to convert to Base64
+      const base64Image = await convertToBase64(file);
       setEmployee({ ...employee, avatar: base64Image });
     }
   };
@@ -149,12 +145,7 @@ const Profile: React.FC = () => {
 
   if (profileLoading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="100vh"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
         <CircularProgress />
       </Box>
     );
@@ -170,38 +161,39 @@ const Profile: React.FC = () => {
         <Grid item xs={12} md={4}>
           <Card sx={{ boxShadow: 3, borderRadius: 2, height: '100%' }}>
             <CardContent>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                }}
-              >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <CardMedia
                   component="img"
                   image={employee.avatar || 'https://via.placeholder.com/150'}
-                  alt={employee.name}
+                  alt={`${employee.firstName} ${employee.lastName}` || employee.email}
                   sx={{ width: 170, height: 170, borderRadius: '50%' }}
                 />
                 <CardActions>
                   <Button variant="contained" component="label">
                     Upload Avatar
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
+                    <input type="file" hidden accept="image/*" onChange={handleImageChange} />
                   </Button>
                 </CardActions>
               </Box>
               <Grid container spacing={2} sx={{ mt: 2 }}>
+                {/* First Name */}
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label="Name"
+                    label="First Name"
                     variant="outlined"
-                    name="name"
-                    value={employee.name}
+                    name="firstName"
+                    value={employee.firstName || ''}
+                    onChange={handleInputChange}
+                    fullWidth
+                  />
+                </Grid>
+                {/* Last Name */}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Last Name"
+                    variant="outlined"
+                    name="lastName"
+                    value={employee.lastName || ''}
                     onChange={handleInputChange}
                     fullWidth
                   />
@@ -300,10 +292,7 @@ const Profile: React.FC = () => {
                 </Grid>
                 <Grid item xs={12}>
                   {/* Use SkillsInput Component */}
-                  <SkillsInput
-                    skills={employee.skills || []}
-                    setSkills={handleSkillsChange}
-                  />
+                  <SkillsInput skills={employee.skills || []} setSkills={handleSkillsChange} />
                 </Grid>
               </Grid>
               <Box sx={{ mt: 2 }}>
@@ -351,9 +340,7 @@ const Profile: React.FC = () => {
                 </Button>
               </Box>
               {workExperience.length === 0 ? (
-                <Typography variant="body1">
-                  No work experience added yet.
-                </Typography>
+                <Typography variant="body1">No work experience added yet.</Typography>
               ) : (
                 <Timeline position="alternate">
                   {workExperience.map((experience, index) => (
@@ -364,30 +351,18 @@ const Profile: React.FC = () => {
                       </TimelineSeparator>
                       <TimelineContent>
                         <Card sx={{ padding: 2, position: 'relative' }}>
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                            }}
-                          >
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                             <Box>
-                              <Typography variant="subtitle1">
-                                {experience.name}
-                              </Typography>
+                              <Typography variant="subtitle1">{experience.name}</Typography>
                               <Typography variant="subtitle2">
                                 Company: {experience.company}
                               </Typography>
                               <Typography variant="body2">
                                 From: {experience.from} - To: {experience.to}
                               </Typography>
-                              <Typography variant="body2">
-                                {experience.description}
-                              </Typography>
+                              <Typography variant="body2">{experience.description}</Typography>
                             </Box>
-                            <Button
-                              sx={{ minWidth: 'auto' }}
-                              onClick={() => handleRemoveExperience(index)}
-                            >
+                            <Button sx={{ minWidth: 'auto' }} onClick={() => handleRemoveExperience(index)}>
                               <DeleteIcon />
                             </Button>
                           </Box>

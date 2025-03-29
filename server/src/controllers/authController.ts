@@ -1,3 +1,4 @@
+// controllers/authController.ts
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -10,11 +11,10 @@ const generateToken = (id: string) => {
 };
 
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
-  const { email, password } = req.body;
+  const { email, password, firstName, lastName } = req.body;
 
   try {
     const userExists = await User.findOne({ email });
-
     if (userExists) {
       res.status(400).json({ message: 'User already exists' });
       return;
@@ -26,12 +26,15 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     const user = await User.create({
       email,
       password: hashedPassword,
+      firstName,
+      lastName,
     });
 
     if (user) {
       res.status(201).json({
+        id: user.id,  // Include the user id here
         email: user.email,
-        token: generateToken(user.id),
+        token: generateToken(user.id.toString()),
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -49,8 +52,9 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
 
     if (user && (await bcrypt.compare(password, user.password))) {
       res.json({
+        id: user.id,  // Include the user id here
         email: user.email,
-        token: generateToken(user.id),
+        token: generateToken(user.id.toString()),
       });
     } else {
       res.status(400).json({ message: 'Invalid email or password' });

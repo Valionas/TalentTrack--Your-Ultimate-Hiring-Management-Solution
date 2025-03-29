@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,7 +17,7 @@ import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import AddIcon from '@mui/icons-material/Add';
 import { FaBuilding } from 'react-icons/fa';
-import { Job } from '../../packages/models/Job';
+import { Job, JobResponse } from '../../packages/models/Job';
 
 const jobTypes = ['Full-Time', 'Part-Time', 'Contract'];
 
@@ -25,8 +25,19 @@ const CreateUpdateJob: React.FC<CreateUpdateJobProps> = ({
   open,
   onClose,
   onSave,
+  onUpdate,
+  onDelete,
   job,
 }) => {
+  const generateRandomJobId = (): string => {
+    // If the browser supports crypto.randomUUID, use it:
+    if (window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    // Otherwise, fall back to a simple random string:
+    return Math.random().toString(36).substring(2, 18);
+  };
+
   const [jobDetails, setJobDetails] = useState<Job>(
     job || {
       title: '',
@@ -43,9 +54,41 @@ const CreateUpdateJob: React.FC<CreateUpdateJobProps> = ({
       category: '',
       benefits: [],
       applicationDeadline: new Date().toISOString().split('T')[0],
-      jobId: '',
+      jobId: generateRandomJobId(),
+      createdBy: localStorage.getItem('currentUser') || '',
     },
   );
+
+  useEffect(() => {
+    if (job) {
+      setJobDetails({
+        ...job,
+        datePosted: new Date(job.datePosted).toISOString().split('T')[0],
+        applicationDeadline: new Date(job.applicationDeadline)
+          .toISOString()
+          .split('T')[0],
+      });
+    } else {
+      setJobDetails({
+        title: '',
+        companyName: '',
+        companyLogo: '',
+        location: '',
+        type: '',
+        datePosted: new Date().toISOString().split('T')[0],
+        skills: [],
+        description: '',
+        salaryRange: '',
+        experience: '',
+        contactEmail: '',
+        category: '',
+        benefits: [],
+        applicationDeadline: new Date().toISOString().split('T')[0],
+        jobId: generateRandomJobId(),
+        createdBy: localStorage.getItem('currentUser') || '',
+      });
+    }
+  }, [job]);
   const [skillInput, setSkillInput] = useState('');
   const [benefitInput, setBenefitInput] = useState('');
 
@@ -329,7 +372,9 @@ interface CreateUpdateJobProps {
   open: boolean;
   onClose: () => void;
   onSave: (job: Job) => void;
-  job?: Job;
+  onDelete?: (jobId: string) => void;
+  onUpdate?: ({ id, job }: { id: string; job: Job }) => void;
+  job: JobResponse | null;
 }
 
 export default CreateUpdateJob;
