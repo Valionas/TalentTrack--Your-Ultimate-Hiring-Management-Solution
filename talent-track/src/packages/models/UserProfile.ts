@@ -5,7 +5,7 @@ export interface UserProfile {
     avatar?: string;
     age?: number;
     country?: string;
-    industry?: string;
+    industry: string;
     language?: string;
     phone?: string;
     address?: string;

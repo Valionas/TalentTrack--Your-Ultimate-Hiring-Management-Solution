@@ -27,7 +27,7 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee }) => {
           {employee.firstName} {employee.lastName}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Industry: {employee.industry}
+          Industry: {employee.industry || 'Not specified'}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Age: {employee.age}

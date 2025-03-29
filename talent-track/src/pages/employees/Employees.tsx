@@ -57,30 +57,36 @@ const Employees: React.FC = () => {
 
     let filtered = employees.filter((employee) => {
       // Combine firstName and lastName into a fullName string
-      const fullName = `${employee.firstName || ''} ${employee.lastName || ''}`.trim();
-      return (
-        fullName.toLowerCase().includes(searchText.toLowerCase()) &&
-        employee.industry &&
-        (industries.length === 0 || industries.includes(employee.industry))
-      );
+      const fullName = `${employee.firstName || ''} ${employee.lastName || ''}`.trim().toLowerCase();
+
+      // Check if name includes the search text
+      const matchesSearch = fullName.includes(searchText.toLowerCase());
+
+      // Filter by industry only if one or more industries are selected
+      const matchesIndustry =
+        industries.length > 0 ? industries.includes(employee.industry) : true;
+
+      return matchesSearch && matchesIndustry;
     });
 
+    // Sort the filtered results
     if (order === 'asc') {
       filtered.sort((a, b) => {
-        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim();
-        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim();
+        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
         return nameA.localeCompare(nameB);
       });
     } else {
       filtered.sort((a, b) => {
-        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim();
-        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim();
+        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
         return nameB.localeCompare(nameA);
       });
     }
 
     setFilteredEmployees(filtered);
   };
+
 
   if (isLoading) {
     return (
