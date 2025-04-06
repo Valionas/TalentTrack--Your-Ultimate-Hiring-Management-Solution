@@ -5,6 +5,8 @@ import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
 import jobRoutes from './routes/jobRoutes';
 import userRoutes from './routes/userRoutes';
+import contractRoutes from './routes/contractRoutes';
+import messageRoutes from './routes/messageRoutes';
 
 dotenv.config();
 
@@ -21,7 +23,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:3000', // Add any other origins you want to allow
-  'http://localhost:8000'
+  'http://localhost:8000',
 ];
 
 const corsOptions: CorsOptions = {
@@ -43,8 +45,13 @@ app.options('*', cors(corsOptions));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
-app.use('/api/users', userRoutes)
+app.use('/api/users', userRoutes);
+app.use('/api/messages', messageRoutes);
+
+// Mount contract routes
+app.use('/api/contracts', contractRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+

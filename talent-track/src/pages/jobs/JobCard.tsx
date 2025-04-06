@@ -7,7 +7,6 @@ import {
   Typography,
   Grid,
   Chip,
-  IconButton,
   Button,
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -24,14 +23,21 @@ import { JobResponse } from '../../packages/models/Job';
 interface JobCardProps {
   job: JobResponse;
   onDelete: (id: string) => void;
-  onUpdate: (job: any) => void;
+  onUpdate: (job: JobResponse) => void;
+  onApply: (job: JobResponse) => void;  // <--- new handler for applying
 }
 
-const JobCard: React.FC<JobCardProps> = ({ job, onDelete, onUpdate }) => {
-  // Assuming currentUser is stored in localStorage under 'currentUser'
-  const currentUser = localStorage.getItem('currentUser');
+const JobCard: React.FC<JobCardProps> = ({ job, onDelete, onUpdate, onApply }) => {
+  const currentUser = localStorage.getItem('currentUser') || '';
   const isOwner = job.createdBy === currentUser;
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
+
+  // If the job has an applicants array, check if it includes the current user
+  const hasApplicants = job.applicants && job.applicants.length > 0;
+  const alreadyApplied = hasApplicants && job.applicants!.includes(currentUser);
+
+  // Show the "Apply" button only if user is not owner, not admin, and hasn't applied yet
+  const canApply = !isOwner && !isAdmin && !alreadyApplied;
 
   return (
     <Card
@@ -88,7 +94,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onDelete, onUpdate }) => {
           {/* Benefits */}
           <Grid item xs={12} md={3}>
             <Box>
-              {job.benefits.map((benefit: string, index: number) => (
+              {job.benefits.map((benefit, index) => (
                 <Chip
                   key={index}
                   label={benefit}
@@ -103,7 +109,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onDelete, onUpdate }) => {
           {/* Actions & Additional Info */}
           <Grid item xs={12} md={3}>
             <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-              {/* Action Buttons */}
+              {/* Update/Delete Buttons */}
               {(isOwner || isAdmin) && (
                 <Box
                   sx={{
@@ -132,7 +138,19 @@ const JobCard: React.FC<JobCardProps> = ({ job, onDelete, onUpdate }) => {
                 </Box>
               )}
 
-              {/* Divider */}
+              {/* Apply Button */}
+              {canApply && (
+                <Box sx={{ mt: 1, mb: 1 }}>
+                  <Button
+                    variant="outlined"
+                    color="success"
+                    onClick={() => onApply(job)}
+                  >
+                    Apply
+                  </Button>
+                </Box>
+              )}
+
               <Box sx={{ borderTop: '1px solid #ddd', mt: 1, pt: 1 }}>
                 <Typography variant="body2" color="textSecondary">
                   <CalendarTodayIcon fontSize="small" sx={{ mr: 0.5 }} />
@@ -159,7 +177,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onDelete, onUpdate }) => {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Grid container spacing={1} justifyContent={{ xs: 'center', md: 'flex-start' }}>
-              {job.skills.map((skill: string, index: number) => (
+              {job.skills.map((skill, index) => (
                 <Grid item key={index}>
                   <Chip label={skill} variant="outlined" />
                 </Grid>

@@ -6,8 +6,9 @@ import {
   Typography,
   Box,
   Paper,
+  Link as MuiLink,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
@@ -15,6 +16,11 @@ import {
   AuthResponse,
   LoginData,
 } from '../../api/services/authService';
+
+interface FormErrors {
+  email: string;
+  password: string;
+}
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -86,7 +92,6 @@ const Login: React.FC = () => {
       if (emailError) notifyError(emailError);
       if (passwordError) notifyError(passwordError);
     } else {
-      // Submit form
       const loginData: LoginData = { email, password };
       login(loginData);
     }
@@ -135,6 +140,21 @@ const Login: React.FC = () => {
               error={Boolean(errors.password)}
               helperText={errors.password}
             />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                mt: 1,
+                mb: 2,
+              }}
+            >
+              <MuiLink component={Link} to="/register" underline="hover">
+                Sign Up
+              </MuiLink>
+              <MuiLink component={Link} to="/reset-password" underline="hover">
+                Forgot Password?
+              </MuiLink>
+            </Box>
             <Button
               type="submit"
               fullWidth
@@ -151,10 +171,5 @@ const Login: React.FC = () => {
     </Container>
   );
 };
-
-interface FormErrors {
-  email: string;
-  password: string;
-}
 
 export default Login;

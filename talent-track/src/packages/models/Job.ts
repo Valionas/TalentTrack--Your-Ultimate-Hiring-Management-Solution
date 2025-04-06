@@ -15,6 +15,7 @@ export interface Job {
   applicationDeadline: string;
   jobId: string;
   createdBy: string;
+  applicants?: string[];
 }
 
 export interface JobResponse extends Job {

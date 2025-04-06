@@ -1,4 +1,3 @@
-// api/services/authService.ts
 import { ErrorResponseModel } from "../../packages/models/Error";
 import axiosClient from "../axiosClient";
 import { useMutation, UseMutationOptions, UseMutationResult } from "react-query";
@@ -9,11 +8,18 @@ export interface RegisterData {
   lastName: string;
   email: string;
   password: string;
+  safeCode: string; // New field for safe code
 }
 
 export interface LoginData {
   email: string;
   password: string;
+}
+
+export interface ResetPasswordData {
+  email: string;
+  safeCode: string;
+  newPassword: string;
 }
 
 // Response interfaces
@@ -38,7 +44,7 @@ export const registerUser = async (data: RegisterData): Promise<AuthResponse> =>
   }
 };
 
-// Login user mutation remains unchanged
+// Login user mutation
 export const useLoginMutation = (
   options?: UseMutationOptions<AuthResponse, ErrorResponseModel, LoginData>
 ): UseMutationResult<AuthResponse, ErrorResponseModel, LoginData> =>
@@ -50,5 +56,20 @@ export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
     return response.data;
   } catch (error: any) {
     throw error.response?.data || { message: 'Login failed' };
+  }
+};
+
+// Reset password mutation
+export const useResetPasswordMutation = (
+  options?: UseMutationOptions<{ message: string }, ErrorResponseModel, ResetPasswordData>
+): UseMutationResult<{ message: string }, ErrorResponseModel, ResetPasswordData> =>
+  useMutation<{ message: string }, ErrorResponseModel, ResetPasswordData>(resetPassword, options);
+
+export const resetPassword = async (data: ResetPasswordData): Promise<{ message: string }> => {
+  try {
+    const response = await axiosClient.post('/auth/reset-password', data);
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: 'Reset password failed' };
   }
 };

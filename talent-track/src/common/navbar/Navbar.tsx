@@ -19,18 +19,19 @@ import {
   FaFileAlt,
   FaSignOutAlt,
   FaUser,
+  FaEnvelope, // Added for Messages
 } from 'react-icons/fa';
 import { MdOutlineWorkOutline } from 'react-icons/md';
 import { logout, isLoggedIn } from '../../utils/authUtils';
 
-type MenuItem = {
+type MenuItemType = {
   label: string;
   path: string;
   icon: JSX.Element;
   protected: boolean;
 };
 
-const menuItems: MenuItem[] = [
+const menuItems: MenuItemType[] = [
   { label: 'Home', path: '/', icon: <FaHome size={20} />, protected: false },
   {
     label: 'Jobs',
@@ -51,6 +52,12 @@ const menuItems: MenuItem[] = [
     protected: true,
   },
   {
+    label: 'Messages',
+    path: '/messages',
+    icon: <FaEnvelope size={20} />,
+    protected: true,
+  },
+  {
     label: 'Terms & Conditions',
     path: '/terms-and-conditions',
     icon: <FaFileAlt size={20} />,
@@ -58,7 +65,7 @@ const menuItems: MenuItem[] = [
   },
 ];
 
-const authItems: MenuItem[] = [
+const authItems: MenuItemType[] = [
   {
     label: 'Login',
     path: '/login',
@@ -111,7 +118,7 @@ const Navbar: React.FC = () => {
     navigate('/login');
   }, [navigate]);
 
-  const renderMenuItems = (items: MenuItem[]) =>
+  const renderMenuItems = (items: MenuItemType[]) =>
     items.map(({ label, path, icon, protected: isProtected }) =>
       !isProtected || isLoggedIn() ? (
         <Button
@@ -130,6 +137,7 @@ const Navbar: React.FC = () => {
   return (
     <AppBar position="static">
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        {/* Desktop Menu */}
         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
           {renderMenuItems(menuItems)}
         </Box>
@@ -158,6 +166,7 @@ const Navbar: React.FC = () => {
             renderMenuItems(authItems)
           )}
         </Box>
+        {/* Mobile Menu */}
         <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
           <IconButton
             edge="start"

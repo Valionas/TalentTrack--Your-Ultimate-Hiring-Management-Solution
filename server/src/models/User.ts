@@ -1,7 +1,5 @@
-// models/User.ts
 import mongoose, { Document, Schema } from 'mongoose';
 
-// Define the WorkExperience interface
 export interface WorkExperience {
   name: string;
   from: string;
@@ -10,10 +8,10 @@ export interface WorkExperience {
   company: string;
 }
 
-// Update the IUser interface to include firstName and lastName
 export interface IUser extends Document {
   email: string;
   password: string;
+  safeCode?: string; // New field for the hashed safe code
   firstName?: string;
   lastName?: string;
   age?: number;
@@ -27,7 +25,6 @@ export interface IUser extends Document {
   workExperience?: WorkExperience[];
 }
 
-// Define a separate schema for workExperience
 const WorkExperienceSchema: Schema = new Schema({
   name: { type: String, required: true },
   from: { type: String, required: true },
@@ -36,12 +33,12 @@ const WorkExperienceSchema: Schema = new Schema({
   company: { type: String, required: true },
 });
 
-// Define the main User schema with firstName and lastName fields
 const UserSchema: Schema = new Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  firstName: { type: String }, // New field for first name
-  lastName: { type: String },  // New field for last name
+  safeCode: { type: String, required: true }, // Store the hashed safe code
+  firstName: { type: String },
+  lastName: { type: String },
   age: { type: Number },
   industry: { type: String },
   country: { type: String },
@@ -49,8 +46,8 @@ const UserSchema: Schema = new Schema({
   phone: { type: String },
   address: { type: String },
   skills: { type: [String] },
-  avatar: { type: String, required: false },
-  workExperience: { type: [WorkExperienceSchema], required: false },
+  avatar: { type: String },
+  workExperience: { type: [WorkExperienceSchema] },
 });
 
 const User = mongoose.model<IUser>('User', UserSchema);
