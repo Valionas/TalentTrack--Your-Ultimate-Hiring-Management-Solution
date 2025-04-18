@@ -9,12 +9,8 @@ import {
   CardContent,
   CardMedia,
   CardActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent,
   CircularProgress,
+  Autocomplete,
 } from '@mui/material';
 import {
   Timeline,
@@ -36,16 +32,15 @@ import {
 } from '../../api/services/profileService';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import SkillsInput from './SkillsInput'; // Import your SkillsInput component
+import SkillsInput from './SkillsInput';
 
-const industries = ['Technology', 'Healthcare', 'Finance', 'Education'];
-const countries = ['USA', 'Canada', 'UK', 'Australia', 'New Zealand'];
-const languages = ['English', 'French', 'Spanish', 'German', 'Chinese'];
+import { countries } from '../../constants/countries';
+import { industries } from '../../constants/industries';
+import { languages } from '../../constants/languages';           // NEW
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
 
-  // Update initial state: remove name and include firstName and lastName
   const [employee, setEmployee] = useState<UserProfile>({
     firstName: '',
     lastName: '',
@@ -66,26 +61,19 @@ const Profile: React.FC = () => {
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
   const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null);
 
-  // Fetch user profile using react-query
   const { data: profileData, isLoading: profileLoading, isError } = useUserProfileQuery();
 
-  // Update user profile mutation
   const { mutate: updateProfile, isLoading: updatingProfile } =
     useUpdateUserProfileMutation({
       onSuccess: () => {
-        toast.success('Profile updated successfully!', {
-          position: 'bottom-right',
-        });
+        toast.success('Profile updated successfully!', { position: 'bottom-right' });
         navigate('/profile');
       },
       onError: (error: any) => {
-        toast.error(error.message || 'Failed to update profile', {
-          position: 'bottom-right',
-        });
+        toast.error(error.message || 'Failed to update profile', { position: 'bottom-right' });
       },
     });
 
-  // When the profile data is fetched, update the employee state
   useEffect(() => {
     if (profileData) {
       setEmployee(profileData);
@@ -98,9 +86,8 @@ const Profile: React.FC = () => {
     setEmployee({ ...employee, [name]: value });
   };
 
-  const handleSelectChange = (e: SelectChangeEvent<string>) => {
-    const { name, value } = e.target;
-    setEmployee({ ...employee, [name]: value });
+  const handleAutoChange = (field: keyof UserProfile, value: string) => {
+    setEmployee({ ...employee, [field]: value });
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,10 +100,7 @@ const Profile: React.FC = () => {
 
   const handleAddExperience = (experience: WorkExperience) => {
     setWorkExperience([...workExperience, experience]);
-    setEmployee({
-      ...employee,
-      workExperience: [...workExperience, experience],
-    });
+    setEmployee({ ...employee, workExperience: [...workExperience, experience] });
   };
 
   const handleRemoveExperience = (index: number) => {
@@ -126,10 +110,10 @@ const Profile: React.FC = () => {
 
   const confirmRemoveExperience = () => {
     if (selectedExperienceIndex !== null) {
-      const updatedExperience = [...workExperience];
-      updatedExperience.splice(selectedExperienceIndex, 1);
-      setWorkExperience(updatedExperience);
-      setEmployee({ ...employee, workExperience: updatedExperience });
+      const updated = [...workExperience];
+      updated.splice(selectedExperienceIndex, 1);
+      setWorkExperience(updated);
+      setEmployee({ ...employee, workExperience: updated });
       setSelectedExperienceIndex(null);
       setConfirmationDialogOpen(false);
     }
@@ -139,9 +123,7 @@ const Profile: React.FC = () => {
     setEmployee({ ...employee, skills: newSkills });
   };
 
-  const handleSubmit = () => {
-    updateProfile(employee);
-  };
+  const handleSubmit = () => updateProfile(employee);
 
   if (profileLoading) {
     return (
@@ -156,8 +138,9 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <Box sx={{ padding: 4, maxWidth: 1400, margin: 'auto' }}>
+    <Box sx={{ p: 4, maxWidth: 1400, m: 'auto' }}>
       <Grid container spacing={4}>
+        {/* ---------- Left column ---------- */}
         <Grid item xs={12} md={4}>
           <Card sx={{ boxShadow: 3, borderRadius: 2, height: '100%' }}>
             <CardContent>
@@ -175,46 +158,39 @@ const Profile: React.FC = () => {
                   </Button>
                 </CardActions>
               </Box>
+
               <Grid container spacing={2} sx={{ mt: 2 }}>
-                {/* First Name */}
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="First Name"
                     variant="outlined"
                     name="firstName"
-                    value={employee.firstName || ''}
+                    value={employee.firstName}
                     onChange={handleInputChange}
                     fullWidth
                   />
                 </Grid>
-                {/* Last Name */}
+
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="Last Name"
                     variant="outlined"
                     name="lastName"
-                    value={employee.lastName || ''}
+                    value={employee.lastName}
                     onChange={handleInputChange}
                     fullWidth
                   />
                 </Grid>
+
                 <Grid item xs={12} sm={6}>
-                  <FormControl variant="outlined" fullWidth>
-                    <InputLabel>Industry</InputLabel>
-                    <Select
-                      name="industry"
-                      value={employee.industry}
-                      onChange={handleSelectChange}
-                      label="Industry"
-                    >
-                      {industries.map((industry) => (
-                        <MenuItem key={industry} value={industry}>
-                          {industry}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <Autocomplete
+                    options={industries}
+                    value={employee.industry}
+                    onChange={(_, v) => handleAutoChange('industry', v || '')}
+                    renderInput={(params) => <TextField {...params} label="Industry" fullWidth />}
+                  />
                 </Grid>
+                {/* Age (minimum 14) */}
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="Age"
@@ -222,44 +198,35 @@ const Profile: React.FC = () => {
                     type="number"
                     name="age"
                     value={employee.age}
-                    onChange={handleInputChange}
+                    inputProps={{ min: 14 }}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val)) {
+                        setEmployee({ ...employee, age: Math.max(14, val) });
+                      }
+                    }}
                     fullWidth
                   />
                 </Grid>
+
                 <Grid item xs={12} sm={6}>
-                  <FormControl variant="outlined" fullWidth>
-                    <InputLabel>Country</InputLabel>
-                    <Select
-                      name="country"
-                      value={employee.country}
-                      onChange={handleSelectChange}
-                      label="Country"
-                    >
-                      {countries.map((country) => (
-                        <MenuItem key={country} value={country}>
-                          {country}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <Autocomplete
+                    options={countries}
+                    value={employee.country}
+                    onChange={(_, v) => handleAutoChange('country', v || '')}
+                    renderInput={(params) => <TextField {...params} label="Country" fullWidth />}
+                  />
                 </Grid>
+
                 <Grid item xs={12} sm={6}>
-                  <FormControl variant="outlined" fullWidth>
-                    <InputLabel>Language</InputLabel>
-                    <Select
-                      name="language"
-                      value={employee.language}
-                      onChange={handleSelectChange}
-                      label="Language"
-                    >
-                      {languages.map((language) => (
-                        <MenuItem key={language} value={language}>
-                          {language}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <Autocomplete
+                    options={languages}
+                    value={employee.language}
+                    onChange={(_, v) => handleAutoChange('language', v || '')}
+                    renderInput={(params) => <TextField {...params} label="Language" fullWidth />}
+                  />
                 </Grid>
+
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="Email"
@@ -270,6 +237,7 @@ const Profile: React.FC = () => {
                     fullWidth
                   />
                 </Grid>
+
                 <Grid item xs={12} sm={6}>
                   <TextField
                     label="Phone"
@@ -280,7 +248,8 @@ const Profile: React.FC = () => {
                     fullWidth
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+
+                <Grid item xs={12}>
                   <TextField
                     label="Address"
                     variant="outlined"
@@ -290,11 +259,12 @@ const Profile: React.FC = () => {
                     fullWidth
                   />
                 </Grid>
+
                 <Grid item xs={12}>
-                  {/* Use SkillsInput Component */}
-                  <SkillsInput skills={employee.skills || []} setSkills={handleSkillsChange} />
+                  <SkillsInput skills={employee.skills} setSkills={handleSkillsChange} />
                 </Grid>
               </Grid>
+
               <Box sx={{ mt: 2 }}>
                 <Button
                   variant="contained"
@@ -309,60 +279,41 @@ const Profile: React.FC = () => {
           </Card>
         </Grid>
 
+        {/* ---------- Right column ---------- */}
         <Grid item xs={12} md={8}>
-          <Card
-            sx={{
-              boxShadow: 3,
-              borderRadius: 2,
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
+          <Card sx={{ boxShadow: 3, borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardContent sx={{ flex: 1, overflowY: 'auto', maxHeight: '80vh' }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6" gutterBottom>
                   Work Experience
                 </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => setDialogOpen(true)}
-                  sx={{ position: 'sticky', top: 0 }}
-                >
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
                   Add Work Experience
                 </Button>
               </Box>
+
               {workExperience.length === 0 ? (
-                <Typography variant="body1">No work experience added yet.</Typography>
+                <Typography>No work experience added yet.</Typography>
               ) : (
                 <Timeline position="alternate">
-                  {workExperience.map((experience, index) => (
-                    <TimelineItem key={index}>
+                  {workExperience.map((exp, idx) => (
+                    <TimelineItem key={idx}>
                       <TimelineSeparator>
                         <TimelineDot />
                         <TimelineConnector />
                       </TimelineSeparator>
                       <TimelineContent>
-                        <Card sx={{ padding: 2, position: 'relative' }}>
+                        <Card sx={{ p: 2 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                             <Box>
-                              <Typography variant="subtitle1">{experience.name}</Typography>
-                              <Typography variant="subtitle2">
-                                Company: {experience.company}
-                              </Typography>
+                              <Typography variant="subtitle1">{exp.name}</Typography>
+                              <Typography variant="subtitle2">Company: {exp.company}</Typography>
                               <Typography variant="body2">
-                                From: {experience.from} - To: {experience.to}
+                                From: {exp.from} - To: {exp.to}
                               </Typography>
-                              <Typography variant="body2">{experience.description}</Typography>
+                              <Typography variant="body2">{exp.description}</Typography>
                             </Box>
-                            <Button sx={{ minWidth: 'auto' }} onClick={() => handleRemoveExperience(index)}>
+                            <Button sx={{ minWidth: 'auto' }} onClick={() => handleRemoveExperience(idx)}>
                               <DeleteIcon />
                             </Button>
                           </Box>
@@ -376,12 +327,14 @@ const Profile: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
+
       <AddExperienceDialog
         dialogOpen={dialogOpen}
         setDialogOpen={setDialogOpen}
         onAdd={handleAddExperience}
         onClose={() => setDialogOpen(false)}
       />
+
       <ConfirmationDialog
         open={confirmationDialogOpen}
         title="Confirm Deletion"
@@ -393,14 +346,12 @@ const Profile: React.FC = () => {
   );
 };
 
-// Helper to convert image file to Base64
-const convertToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
+const convertToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
+    reader.onerror = (err) => reject(err);
   });
-};
 
 export default Profile;

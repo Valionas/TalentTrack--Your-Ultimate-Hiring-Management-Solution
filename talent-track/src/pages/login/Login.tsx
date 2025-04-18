@@ -37,7 +37,7 @@ const Login: React.FC = () => {
       toast.success('Login successful!', {
         position: 'bottom-right',
       });
-      navigate('/profile');
+      navigate('/jobs');
     },
     onError: (error) => {
       toast.error(error.message, {

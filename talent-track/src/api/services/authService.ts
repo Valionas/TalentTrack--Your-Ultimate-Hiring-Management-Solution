@@ -1,6 +1,6 @@
-import { ErrorResponseModel } from "../../packages/models/Error";
-import axiosClient from "../axiosClient";
-import { useMutation, UseMutationOptions, UseMutationResult } from "react-query";
+import { ErrorResponseModel } from '../../packages/models/Error';
+import axiosClient from '../axiosClient';
+import { useMutation, UseMutationOptions, UseMutationResult } from 'react-query';
 
 // Data interfaces
 export interface RegisterData {
@@ -8,7 +8,10 @@ export interface RegisterData {
   lastName: string;
   email: string;
   password: string;
-  safeCode: string; // New field for safe code
+  safeCode: string;
+  age: number;
+  country: string;
+  avatar: string;   // base64 string
 }
 
 export interface LoginData {

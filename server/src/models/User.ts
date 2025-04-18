@@ -11,7 +11,7 @@ export interface WorkExperience {
 export interface IUser extends Document {
   email: string;
   password: string;
-  safeCode?: string; // New field for the hashed safe code
+  safeCode: string; // New field for the hashed safe code
   firstName?: string;
   lastName?: string;
   age?: number;

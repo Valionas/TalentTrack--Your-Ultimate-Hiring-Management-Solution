@@ -2,155 +2,161 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   TextField,
-  MenuItem,
   FormControl,
   InputLabel,
   Select,
+  MenuItem,
   SelectChangeEvent,
-  Checkbox,
-  ListItemText,
   Grid,
-  OutlinedInput,
   CircularProgress,
   Typography,
+  Autocomplete,
 } from '@mui/material';
 import { useAllUsersQuery } from '../../api/services/userService';
 import { UserProfileResponse } from '../../packages/models/UserProfile';
 import EmployeeCard from './EmployeeCard';
+import EmployeeProfileDialog from './EmployeeProfileDialog';
+import { industries } from '../../constants/industries';
+import { countries } from '../../constants/countries';
 
-const industries = ['Technology', 'Healthcare', 'Finance', 'Education'];
+type SortOpt = 'nameAsc' | 'nameDesc' | 'ageAsc' | 'ageDesc';
 
 const Employees: React.FC = () => {
   const [search, setSearch] = useState('');
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
+  const [sortOrder, setSortOrder] = useState<SortOpt>('nameAsc');
+  const [selectedIndustry, setSelectedIndustry] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState<UserProfileResponse[]>([]);
 
-  // Fetch all employees using the custom React Query hook
+  /* ---------- dialog ---------- */
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeEmp, setActiveEmp] = useState<UserProfileResponse | null>(null);
+
   const { data: employees, isLoading, isError } = useAllUsersQuery();
 
-  useEffect(() => {
-    if (employees) {
-      filterEmployees(search, selectedIndustries, sortOrder);
-    }
-  }, [employees, search, selectedIndustries, sortOrder]);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    filterEmployees(e.target.value, selectedIndustries, sortOrder);
-  };
-
-  const handleSortChange = (e: SelectChangeEvent<string>) => {
-    const order = e.target.value;
-    setSortOrder(order);
-    filterEmployees(search, selectedIndustries, order);
-  };
-
-  const handleIndustryChange = (event: SelectChangeEvent<string[]>) => {
-    const value = event.target.value as string[];
-    setSelectedIndustries(value);
-    filterEmployees(search, value, sortOrder);
-  };
-
-  const filterEmployees = (searchText: string, industries: string[], order: string) => {
+  /* ---------- filter helper ---------- */
+  const filterEmployees = (
+    q: string,
+    ind: string,
+    ctr: string,
+    order: SortOpt
+  ) => {
     if (!employees) return;
-
-    let filtered = employees.filter((employee) => {
-      // Combine firstName and lastName into a fullName string
-      const fullName = `${employee.firstName || ''} ${employee.lastName || ''}`.trim().toLowerCase();
-
-      // Check if name includes the search text
-      const matchesSearch = fullName.includes(searchText.toLowerCase());
-
-      // Filter by industry only if one or more industries are selected
-      const matchesIndustry =
-        industries.length > 0 ? industries.includes(employee.industry) : true;
-
-      return matchesSearch && matchesIndustry;
+    let list = employees.filter((e) => {
+      const full = `${e.firstName} ${e.lastName}`.toLowerCase();
+      const nOK = full.includes(q.toLowerCase());
+      const iOK = ind ? e.industry === ind : true;
+      const cOK = ctr ? e.country === ctr : true;
+      return nOK && iOK && cOK;
     });
 
-    // Sort the filtered results
-    if (order === 'asc') {
-      filtered.sort((a, b) => {
-        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
-        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
-    } else {
-      filtered.sort((a, b) => {
-        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
-        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
-        return nameB.localeCompare(nameA);
-      });
-    }
-
-    setFilteredEmployees(filtered);
+    list.sort((a, b) => {
+      switch (order) {
+        case 'ageAsc':
+          return (a.age ?? 0) - (b.age ?? 0);
+        case 'ageDesc':
+          return (b.age ?? 0) - (a.age ?? 0);
+        case 'nameDesc':
+          return `${b.firstName} ${b.lastName}`.localeCompare(
+            `${a.firstName} ${a.lastName}`
+          );
+        default:
+          return `${a.firstName} ${a.lastName}`.localeCompare(
+            `${b.firstName} ${b.lastName}`
+          );
+      }
+    });
+    setFilteredEmployees(list);
   };
 
+  /* ---------- side effects ---------- */
+  useEffect(() => {
+    if (employees) filterEmployees(search, selectedIndustry, selectedCountry, sortOrder);
+  }, [employees, search, selectedIndustry, selectedCountry, sortOrder]);
 
-  if (isLoading) {
+  /* ---------- dialog helpers ---------- */
+  const openDialog = (emp: UserProfileResponse) => {
+    setActiveEmp(emp);
+    setDialogOpen(true);
+  };
+  const closeDialog = () => setDialogOpen(false);
+
+  const handleMessage = (emp: UserProfileResponse) =>
+    console.log('message →', emp.email);
+
+  const handleRate = (emp: UserProfileResponse, val: number | null) =>
+    console.log('rate →', emp.firstName, val);
+
+  /* ---------- loading / error ---------- */
+  if (isLoading)
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
         <CircularProgress />
       </Box>
     );
-  }
+  if (isError) return <Typography>Error fetching employees</Typography>;
 
-  if (isError) {
-    return <Typography variant="h6">Error fetching employees</Typography>;
-  }
-
+  /* ---------- render ---------- */
   return (
     <Box sx={{ py: 2, px: 2 }}>
       <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} sm={12} md={6}>
-          <TextField
-            fullWidth
-            label="Search"
-            variant="outlined"
-            value={search}
-            onChange={handleSearchChange}
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField fullWidth label="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Autocomplete
+            options={industries}
+            value={selectedIndustry}
+            onChange={(_, v) => setSelectedIndustry(v || '')}
+            renderInput={(p) => <TextField {...p} label="Industry" />}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <FormControl fullWidth variant="outlined">
-            <InputLabel>Industries</InputLabel>
-            <Select
-              multiple
-              value={selectedIndustries}
-              onChange={handleIndustryChange}
-              input={<OutlinedInput label="Industries" />}
-              renderValue={(selected) => selected.join(', ')}
-              placeholder="Select Industries"
-            >
-              {industries.map((industry) => (
-                <MenuItem key={industry} value={industry}>
-                  <Checkbox checked={selectedIndustries.includes(industry)} />
-                  <ListItemText primary={industry} />
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Autocomplete
+            options={countries}
+            value={selectedCountry}
+            onChange={(_, v) => setSelectedCountry(v || '')}
+            renderInput={(p) => <TextField {...p} label="Country" />}
+          />
         </Grid>
-        <Grid item xs={12} sm={6} md={2}>
-          <FormControl fullWidth variant="outlined">
+
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth>
             <InputLabel>Sort By</InputLabel>
-            <Select value={sortOrder} onChange={handleSortChange} label="Sort By">
-              <MenuItem value="asc">Name Ascending</MenuItem>
-              <MenuItem value="desc">Name Descending</MenuItem>
+            <Select
+              label="Sort By"
+              value={sortOrder}
+              onChange={(e: SelectChangeEvent) =>
+                setSortOrder(e.target.value as SortOpt)
+              }
+            >
+              <MenuItem value="nameAsc">Name Ascending</MenuItem>
+              <MenuItem value="nameDesc">Name Descending</MenuItem>
+              <MenuItem value="ageAsc">Age Ascending</MenuItem>
+              <MenuItem value="ageDesc">Age Descending</MenuItem>
             </Select>
           </FormControl>
         </Grid>
       </Grid>
+
       <Box sx={{ mt: 2 }}>
         <Grid container spacing={2}>
-          {filteredEmployees.map((employee) => (
-            <Grid item xs={12} sm={6} md={4} key={employee._id}>
-              <EmployeeCard employee={employee} />
+          {filteredEmployees.map((e) => (
+            <Grid item xs={12} sm={6} md={4} key={e._id}>
+              <EmployeeCard employee={e} onClick={() => openDialog(e)} />
             </Grid>
           ))}
         </Grid>
       </Box>
+
+      <EmployeeProfileDialog
+        open={dialogOpen}
+        employee={activeEmp}
+        onClose={closeDialog}
+        onRate={handleRate}
+      />
     </Box>
   );
 };

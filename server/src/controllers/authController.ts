@@ -10,7 +10,16 @@ const generateToken = (id: string) => {
 };
 
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
-  const { email, password, firstName, lastName, safeCode } = req.body;
+  const {
+    email,
+    password,
+    firstName,
+    lastName,
+    safeCode,
+    age,
+    country,
+    avatar,
+  } = req.body;
 
   try {
     const userExists = await User.findOne({ email });
@@ -29,6 +38,9 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       safeCode: hashedSafeCode,
       firstName,
       lastName,
+      age,
+      country,
+      avatar,
     });
 
     if (user) {
@@ -80,21 +92,21 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Verify the provided safe code with the hashed version stored in DB
-    const isSafeCodeValid = await bcrypt.compare(safeCode, user.safeCode);
-    if (!isSafeCodeValid) {
-      res.status(400).json({ message: 'Invalid safe code' });
-      return;
+    if (user.safeCode) {
+      const isSafeCodeValid = await bcrypt.compare(safeCode, user.safeCode);
+      if (!isSafeCodeValid) {
+        res.status(400).json({ message: 'Invalid safe code' });
+        return;
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+      user.password = hashedNewPassword;
+      await user.save();
+
+      res.status(200).json({ message: 'Password reset successful' });
     }
-
-    // Hash the new password and update
-    const salt = await bcrypt.genSalt(10);
-    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
-
-    user.password = hashedNewPassword;
-    await user.save();
-
-    res.status(200).json({ message: 'Password reset successful' });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }

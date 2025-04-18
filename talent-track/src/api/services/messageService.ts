@@ -1,10 +1,19 @@
-import { useQuery, useMutation, UseQueryOptions, UseMutationOptions, UseQueryResult, UseMutationResult } from 'react-query';
+import {
+    useQuery,
+    useMutation,
+    UseQueryOptions,
+    UseMutationOptions,
+    UseQueryResult,
+    UseMutationResult,
+} from 'react-query';
 import axiosClient from '../axiosClient';
 import { Message, MessageResponse } from '../../packages/models/Message';
 import { ErrorResponseModel } from '../../packages/models/Error';
 
-// Fetch all messages
-export const useMessagesQuery = (options?: UseQueryOptions<MessageResponse[], ErrorResponseModel>): UseQueryResult<MessageResponse[], ErrorResponseModel> =>
+/* ---------- fetch all ---------- */
+export const useMessagesQuery = (
+    options?: UseQueryOptions<MessageResponse[], ErrorResponseModel>
+): UseQueryResult<MessageResponse[], ErrorResponseModel> =>
     useQuery<MessageResponse[], ErrorResponseModel>('messages', fetchMessages, options);
 
 export const fetchMessages = async (): Promise<MessageResponse[]> => {
@@ -12,8 +21,10 @@ export const fetchMessages = async (): Promise<MessageResponse[]> => {
     return response.data;
 };
 
-// Send (create) a new message
-export const useSendMessageMutation = (options?: UseMutationOptions<MessageResponse, ErrorResponseModel, Message>): UseMutationResult<MessageResponse, ErrorResponseModel, Message> =>
+/* ---------- create ------------- */
+export const useSendMessageMutation = (
+    options?: UseMutationOptions<MessageResponse, ErrorResponseModel, Message>
+): UseMutationResult<MessageResponse, ErrorResponseModel, Message> =>
     useMutation<MessageResponse, ErrorResponseModel, Message>(sendMessage, options);
 
 export const sendMessage = async (data: Message): Promise<MessageResponse> => {
@@ -21,25 +32,61 @@ export const sendMessage = async (data: Message): Promise<MessageResponse> => {
     return response.data;
 };
 
-// Update an existing message
-export const useUpdateMessageMutation = (options?: UseMutationOptions<MessageResponse, ErrorResponseModel, { id: string, data: Message }>): UseMutationResult<MessageResponse, ErrorResponseModel, { id: string, data: Message }> =>
-    useMutation<MessageResponse, ErrorResponseModel, { id: string, data: Message }>(updateMessage, options);
+/* ---------- update (partial) --- */
+export const useUpdateMessageMutation = (
+    options?: UseMutationOptions<
+        MessageResponse,
+        ErrorResponseModel,
+        { id: string; data: Partial<Message> }
+    >
+): UseMutationResult<
+    MessageResponse,
+    ErrorResponseModel,
+    { id: string; data: Partial<Message> }
+> =>
+    useMutation<MessageResponse, ErrorResponseModel, { id: string; data: Partial<Message> }>(
+        updateMessage,
+        options
+    );
 
-export const updateMessage = async ({ id, data }: { id: string, data: Message }): Promise<MessageResponse> => {
+export const updateMessage = async ({
+    id,
+    data,
+}: {
+    id: string;
+    data: Partial<Message>;
+}): Promise<MessageResponse> => {
     const response = await axiosClient.put(`/messages/${id}`, data);
     return response.data;
 };
 
-// Delete a message
-export const useDeleteMessageMutation = (options?: UseMutationOptions<{ message: string }, ErrorResponseModel, string>): UseMutationResult<{ message: string }, ErrorResponseModel, string> =>
-    useMutation<{ message: string }, ErrorResponseModel, string>(deleteMessage, options);
+/* ---------- delete (soft delete per user) ------------- */
+export const useDeleteMessageMutation = (
+    options?: UseMutationOptions<
+        { message: string },
+        ErrorResponseModel,
+        { id: string; userId: string }
+    >
+): UseMutationResult<{ message: string }, ErrorResponseModel, { id: string; userId: string }> =>
+    useMutation<{ message: string }, ErrorResponseModel, { id: string; userId: string }>(
+        deleteMessage,
+        options
+    );
 
-export const deleteMessage = async (id: string): Promise<{ message: string }> => {
-    const response = await axiosClient.delete(`/messages/${id}`);
+export const deleteMessage = async ({
+    id,
+    userId,
+}: {
+    id: string;
+    userId: string;
+}): Promise<{ message: string }> => {
+    const response = await axiosClient.delete(`/messages/${id}`, {
+        data: { userId },
+    });
     return response.data;
 };
 
-// Fetch messages by receiver query
+/* ---------- inbox (by receiver) */
 export const useMessagesByReceiverQuery = (
     receiver: string,
     options?: UseQueryOptions<MessageResponse[], ErrorResponseModel>
@@ -50,7 +97,9 @@ export const useMessagesByReceiverQuery = (
         options
     );
 
-export const fetchMessagesByReceiver = async (receiver: string): Promise<MessageResponse[]> => {
+export const fetchMessagesByReceiver = async (
+    receiver: string
+): Promise<MessageResponse[]> => {
     const response = await axiosClient.get(`/messages/receiver/${receiver}`);
     return response.data;
 };

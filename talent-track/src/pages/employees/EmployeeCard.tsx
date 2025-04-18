@@ -1,33 +1,31 @@
 import React from 'react';
-import { Card, CardContent, Typography, Avatar, Box } from '@mui/material';
+import { Card, CardContent, Typography, Avatar, Box, ButtonBase } from '@mui/material';
 import Rating from '@mui/material/Rating';
 import { UserProfile } from '../../packages/models/UserProfile';
 
-interface EmployeeCardProps {
+interface Props {
   employee: UserProfile;
+  onClick?: () => void;           // 🔸 new (optional) click handler
 }
 
-const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee }) => {
-  return (
+const EmployeeCard: React.FC<Props> = ({ employee, onClick }) => (
+  <ButtonBase
+    onClick={onClick}
+    sx={{ width: '100%', textAlign: 'left', borderRadius: 1 }}
+  >
     <Card
       sx={{
-        // Fixed height for demonstration (can adjust as needed)
         height: 250,
         display: 'flex',
-        // For xs screens, use column layout; for sm+ screens, row layout
         flexDirection: { sm: 'column', md: 'row' },
-        // Scroll if content overflows
         overflow: 'auto',
+        width: '100%',
         transition: 'transform 0.2s, box-shadow 0.2s',
-        '&:hover': {
-          transform: 'scale(1.02)',
-          boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
-        },
+        '&:hover': { transform: 'scale(1.02)', boxShadow: 4 },
         mb: 2,
-        // Center items on both xs and sm, but can adjust if desired
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 4
+        pt: 4,
       }}
     >
       <Avatar
@@ -55,12 +53,15 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee }) => {
           </Typography>
           <Rating value={employee.rating} precision={0.5} readOnly />
         </Box>
-        <Typography variant="body2" color="text.secondary">
-          Skills: {employee.skills ? employee.skills.join(', ') : '-'}
-        </Typography>
+
+        {employee.skills && employee.skills.length > 0 && (
+          <Typography variant="body2" color="text.secondary">
+            Skills: {employee.skills.join(', ')}
+          </Typography>
+        )}
       </CardContent>
     </Card>
-  );
-};
+  </ButtonBase>
+);
 
 export default EmployeeCard;

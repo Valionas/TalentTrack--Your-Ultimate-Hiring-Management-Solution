@@ -1,82 +1,52 @@
 import React, { useState } from 'react';
 import {
     Box,
-    TextField,
     Button,
     List,
     ListItem,
     ListItemText,
     Typography,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
+    CircularProgress,
 } from '@mui/material';
-import CircularProgress from '@mui/material/CircularProgress';
 import {
     useMessagesByReceiverQuery,
     useSendMessageMutation,
-    useUpdateMessageMutation,
     useDeleteMessageMutation,
 } from '../../api/services/messageService';
+import MessageViewDialog from './MessageViewDialog';
+import MessageComposeDialog from './MessageComposeDialog';
+import ConfirmDialog from './ConfirmDialog';
 import { Message as IMessage } from '../../packages/models/Message';
 
+
 const Messages: React.FC = () => {
-    // Retrieve the current user's email (receiver)
-    const currentUserEmail = localStorage.getItem('currentUser') || '';
-    // Fetch messages only for the current receiver
-    const { data: messages, isLoading, refetch } = useMessagesByReceiverQuery(currentUserEmail);
-    const { mutate: sendMessageMutation } = useSendMessageMutation();
-    const { mutate: updateMessageMutation } = useUpdateMessageMutation();
-    const { mutate: deleteMessageMutation } = useDeleteMessageMutation();
+    // localStorage.currentUser now holds the user’s ID
+    const currentUserId = localStorage.getItem('currentUser') || '';
 
-    // State to control dialog visibility
-    const [openDialog, setOpenDialog] = useState(false);
+    const { data: messages, isLoading, refetch } =
+        useMessagesByReceiverQuery(currentUserId);
 
-    // Local state for composing a new message
-    const [newMessage, setNewMessage] = useState<IMessage>({
-        date: new Date().toISOString(),
-        sender: '',
-        receiver: '',
-        description: '',
-    });
+    const { mutate: sendMessage } = useSendMessageMutation();
+    const { mutate: deleteMessage } = useDeleteMessageMutation();
 
-    // Handle input changes for the new message form
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setNewMessage({
-            ...newMessage,
-            [e.target.name]: e.target.value,
-        });
-    };
+    const [composeOpen, setComposeOpen] = useState(false);
+    const [viewMsg, setViewMsg] = useState<IMessage | null>(null);
+    const [delId, setDelId] = useState<string | null>(null);
 
-    // Send a new message
-    const handleSendMessage = () => {
-        sendMessageMutation(newMessage, {
-            onSuccess: () => {
-                refetch();
-                setNewMessage({
-                    date: new Date().toISOString(),
-                    sender: '',
-                    receiver: '',
-                    description: '',
-                });
-                setOpenDialog(false);
-            },
-        });
-    };
-
-    // Example update (you can expand this to show an edit form)
-    const handleUpdateMessage = (id: string, updatedFields: Partial<IMessage>) => {
-        updateMessageMutation({ id, data: { ...newMessage, ...updatedFields } }, {
-            onSuccess: () => refetch(),
-        });
-    };
-
-    // Delete a message
-    const handleDeleteMessage = (id: string) => {
-        deleteMessageMutation(id, {
-            onSuccess: () => refetch(),
-        });
+    /* send a new message */
+    const handleSend = (vals: {
+        receiver: string;
+        topic: string;
+        description: string;
+    }) => {
+        const payload: IMessage = {
+            date: new Date().toISOString(),
+            sender: currentUserId,      // sending own ID
+            receiver: vals.receiver,
+            topic: vals.topic,
+            description: vals.description,
+        };
+        sendMessage(payload, { onSuccess: () => refetch() });
     };
 
     if (isLoading) {
@@ -89,89 +59,78 @@ const Messages: React.FC = () => {
 
     return (
         <Box sx={{ p: 2 }}>
-            <Typography variant="h4" gutterBottom>
-                Inbox for {currentUserEmail}
-            </Typography>
-
             <Button
                 variant="contained"
-                color="primary"
-                onClick={() => setOpenDialog(true)}
+                onClick={() => setComposeOpen(true)}
                 sx={{ mb: 4 }}
             >
                 Compose Message
             </Button>
 
-            {/* Dialog for composing a new message */}
-            <Dialog
-                open={openDialog}
-                onClose={() => setOpenDialog(false)}
-                fullWidth
-                maxWidth="sm"
-            >
-                <DialogTitle>Compose New Message</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        name="sender"
-                        label="Sender"
-                        value={newMessage.sender}
-                        onChange={handleInputChange}
-                        fullWidth
-                        sx={{ mb: 2 }}
-                    />
-                    <TextField
-                        name="receiver"
-                        label="Receiver"
-                        value={newMessage.receiver}
-                        onChange={handleInputChange}
-                        fullWidth
-                        sx={{ mb: 2 }}
-                    />
-                    <TextField
-                        name="description"
-                        label="Message"
-                        value={newMessage.description}
-                        onChange={handleInputChange}
-                        fullWidth
-                        multiline
-                        rows={4}
-                        sx={{ mb: 2 }}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setOpenDialog(false)} color="secondary">
-                        Cancel
-                    </Button>
-                    <Button onClick={handleSendMessage} variant="contained" color="primary">
-                        Send Message
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <MessageComposeDialog
+                open={composeOpen}
+                onClose={() => setComposeOpen(false)}
+                onSend={handleSend}
+            />
 
-            {/* List of messages for the current receiver */}
-            {messages && messages.length > 0 ? (
+            {messages && messages.length ? (
                 <List>
-                    {messages.map((message) => (
-                        <ListItem key={message._id} divider>
+                    {messages.map((m) => (
+                        <ListItem key={m._id} divider>
                             <ListItemText
-                                primary={`${message.sender} → ${message.receiver} (${new Date(
-                                    message.date,
-                                ).toLocaleString()})`}
-                                secondary={message.description}
+                                primary={`${m.senderEmail ?? m.sender ?? '??'} → ${m.receiverEmail ?? m.receiver ?? '??'
+                                    } (${new Date(m.date).toLocaleString()})`}
+                                secondary={
+                                    <>
+                                        {m.topic && <strong>Topic: {m.topic} · </strong>}
+                                        {m.description}
+                                    </>
+                                }
                             />
+
                             <Button
-                                variant="outlined"
-                                color="secondary"
-                                onClick={() => handleDeleteMessage(String(message._id))}
+                                sx={{ mr: 1 }}
+                                onClick={() => setViewMsg(m as unknown as IMessage)}
                             >
+                                View
+                            </Button>
+
+                            <Button color="error" onClick={() => setDelId(m._id)}>
                                 Delete
                             </Button>
                         </ListItem>
                     ))}
                 </List>
             ) : (
-                <Typography variant="body1">No new messages.</Typography>
+                <Typography>No new messages.</Typography>
             )}
+
+            {/* Read‑only view dialog */}
+            <MessageViewDialog
+                open={Boolean(viewMsg)}
+                message={viewMsg}
+                onClose={() => setViewMsg(null)}
+            />
+
+            {/* Confirm before delete */}
+            <ConfirmDialog
+                open={Boolean(delId)}
+                title="Delete this message?"
+                onCancel={() => setDelId(null)}
+                onConfirm={() => {
+                    if (delId) {
+                        deleteMessage(
+                            { id: delId, userId: currentUserId },
+                            {
+                                onSuccess: () => {
+                                    refetch();
+                                    setDelId(null);
+                                },
+                            }
+                        );
+                    }
+                }}
+            />
         </Box>
     );
 };
