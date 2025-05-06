@@ -1,3 +1,4 @@
+// pages/profile/Profile.tsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -11,6 +12,7 @@ import {
   CardActions,
   CircularProgress,
   Autocomplete,
+  IconButton,
 } from '@mui/material';
 import {
   Timeline,
@@ -22,6 +24,7 @@ import {
 } from '@mui/lab';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 
 import AddExperienceDialog from './AddExperienceDialog';
 import ConfirmationDialog from '../../common/confirmation-dialog/ConfirmationDialog';
@@ -36,11 +39,12 @@ import SkillsInput from './SkillsInput';
 
 import { countries } from '../../constants/countries';
 import { industries } from '../../constants/industries';
-import { languages } from '../../constants/languages';           // NEW
+import { languages } from '../../constants/languages';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
 
+  /* ---------- state ---------- */
   const [employee, setEmployee] = useState<UserProfile>({
     firstName: '',
     lastName: '',
@@ -56,75 +60,114 @@ const Profile: React.FC = () => {
     workExperience: [],
   });
 
-  const [workExperience, setWorkExperience] = useState<WorkExperience[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingExperience, setEditingExperience] = useState<WorkExperience | null>(null);
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
   const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null);
 
+  /* ---------- queries ---------- */
   const { data: profileData, isLoading: profileLoading, isError } = useUserProfileQuery();
+  const { mutate: updateProfile, isLoading: updatingProfile } = useUpdateUserProfileMutation({
+    onSuccess: () => {
+      toast.success('Profile updated successfully!', { position: 'bottom-right' });
+      // do not navigate away so the user can continue editing
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Failed to update profile', { position: 'bottom-right' });
+    },
+  });
 
-  const { mutate: updateProfile, isLoading: updatingProfile } =
-    useUpdateUserProfileMutation({
-      onSuccess: () => {
-        toast.success('Profile updated successfully!', { position: 'bottom-right' });
-        navigate('/profile');
-      },
-      onError: (error: any) => {
-        toast.error(error.message || 'Failed to update profile', { position: 'bottom-right' });
-      },
-    });
-
+  /* ---------- sync fetched data ---------- */
   useEffect(() => {
     if (profileData) {
       setEmployee(profileData);
-      setWorkExperience(profileData.workExperience || []);
     }
   }, [profileData]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setEmployee({ ...employee, [name]: value });
+  /* ---------- generic save helper ---------- */
+  const saveProfile = (next: UserProfile) => {
+    setEmployee(next);
+    updateProfile(next);
   };
 
-  const handleAutoChange = (field: keyof UserProfile, value: string) => {
-    setEmployee({ ...employee, [field]: value });
+  /* ---------- field handlers ---------- */
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmployee({ ...employee, [e.target.name]: e.target.value });
   };
+  const handleAutoChange = (field: keyof UserProfile, v: string) =>
+    setEmployee({ ...employee, [field]: v });
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const base64Image = await convertToBase64(file);
-      setEmployee({ ...employee, avatar: base64Image });
+    if (e.target.files?.[0]) {
+      const base64 = await fileToBase64(e.target.files[0]);
+      saveProfile({ ...employee, avatar: base64 });
     }
   };
 
-  const handleAddExperience = (experience: WorkExperience) => {
-    setWorkExperience([...workExperience, experience]);
-    setEmployee({ ...employee, workExperience: [...workExperience, experience] });
+  /* ---------- skills ---------- */
+  const handleSkillsChange = (newSkills: string[]) => {
+    saveProfile({ ...employee, skills: newSkills });
   };
 
-  const handleRemoveExperience = (index: number) => {
-    setSelectedExperienceIndex(index);
+  /* ---------- experience CRUD ---------- */
+  const addExperience = (exp: WorkExperience) => {
+    const next = {
+      ...employee,
+      workExperience: [...(employee.workExperience || []), exp],
+    };
+    saveProfile(next);
+  };
+
+  const updateExperience = (idx: number, exp: WorkExperience) => {
+    const nextExp = [...(employee.workExperience || [])];
+    nextExp[idx] = exp;
+    const next = { ...employee, workExperience: nextExp };
+    saveProfile(next);
+  };
+
+  const handleRemoveExperience = (idx: number) => {
+    setSelectedExperienceIndex(idx);
     setConfirmationDialogOpen(true);
   };
-
   const confirmRemoveExperience = () => {
-    if (selectedExperienceIndex !== null) {
-      const updated = [...workExperience];
-      updated.splice(selectedExperienceIndex, 1);
-      setWorkExperience(updated);
-      setEmployee({ ...employee, workExperience: updated });
+    if (selectedExperienceIndex != null) {
+      const nextExp = (employee.workExperience || []).filter((_, i) => i !== selectedExperienceIndex);
+      const next = { ...employee, workExperience: nextExp };
+      saveProfile(next);
       setSelectedExperienceIndex(null);
       setConfirmationDialogOpen(false);
     }
   };
 
-  const handleSkillsChange = (newSkills: string[]) => {
-    setEmployee({ ...employee, skills: newSkills });
+  /* ---------- dialog open helpers ---------- */
+  const openAddDialog = () => {
+    setEditingIndex(null);
+    setEditingExperience(null);
+    setDialogOpen(true);
+  };
+  const openEditDialog = (idx: number) => {
+    setEditingIndex(idx);
+    setEditingExperience(employee.workExperience![idx]);
+    setDialogOpen(true);
+  };
+  const closeDialog = () => {
+    setEditingIndex(null);
+    setEditingExperience(null);
+    setDialogOpen(false);
   };
 
-  const handleSubmit = () => updateProfile(employee);
+  /* ---------- save from dialog ---------- */
+  const handleSaveExperience = (exp: WorkExperience) => {
+    if (editingIndex === null) {
+      addExperience(exp);
+    } else {
+      updateExperience(editingIndex, exp);
+    }
+    closeDialog();
+  };
 
+  /* ---------- render ---------- */
   if (profileLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
@@ -132,7 +175,6 @@ const Profile: React.FC = () => {
       </Box>
     );
   }
-
   if (isError) {
     return <Typography variant="h6">Error fetching profile data</Typography>;
   }
@@ -140,15 +182,15 @@ const Profile: React.FC = () => {
   return (
     <Box sx={{ p: 4, maxWidth: 1400, m: 'auto' }}>
       <Grid container spacing={4}>
-        {/* ---------- Left column ---------- */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ boxShadow: 3, borderRadius: 2, height: '100%' }}>
+        {/* LEFT column (details) */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
             <CardContent>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <CardMedia
                   component="img"
                   image={employee.avatar || 'https://via.placeholder.com/150'}
-                  alt={`${employee.firstName} ${employee.lastName}` || employee.email}
+                  alt="avatar"
                   sx={{ width: 170, height: 170, borderRadius: '50%' }}
                 />
                 <CardActions>
@@ -158,183 +200,220 @@ const Profile: React.FC = () => {
                   </Button>
                 </CardActions>
               </Box>
-
               <Grid container spacing={2} sx={{ mt: 2 }}>
                 <Grid item xs={12} sm={6}>
                   <TextField
+                    fullWidth
                     label="First Name"
-                    variant="outlined"
                     name="firstName"
                     value={employee.firstName}
                     onChange={handleInputChange}
-                    fullWidth
                   />
                 </Grid>
-
                 <Grid item xs={12} sm={6}>
                   <TextField
+                    fullWidth
                     label="Last Name"
-                    variant="outlined"
                     name="lastName"
                     value={employee.lastName}
                     onChange={handleInputChange}
-                    fullWidth
                   />
                 </Grid>
-
                 <Grid item xs={12} sm={6}>
                   <Autocomplete
                     options={industries}
                     value={employee.industry}
                     onChange={(_, v) => handleAutoChange('industry', v || '')}
-                    renderInput={(params) => <TextField {...params} label="Industry" fullWidth />}
+                    renderInput={(p) => <TextField {...p} label="Industry" fullWidth />}
                   />
                 </Grid>
-                {/* Age (minimum 14) */}
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label="Age"
-                    variant="outlined"
-                    type="number"
-                    name="age"
-                    value={employee.age}
-                    inputProps={{ min: 14 }}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val)) {
-                        setEmployee({ ...employee, age: Math.max(14, val) });
-                      }
-                    }}
                     fullWidth
+                    type="number"
+                    label="Age"
+                    name="age"
+                    inputProps={{ min: 14 }}
+                    value={employee.age}
+                    onChange={(e) =>
+                      setEmployee({
+                        ...employee,
+                        age: Math.max(14, Number(e.target.value) || 14),
+                      })
+                    }
                   />
                 </Grid>
-
                 <Grid item xs={12} sm={6}>
                   <Autocomplete
                     options={countries}
                     value={employee.country}
                     onChange={(_, v) => handleAutoChange('country', v || '')}
-                    renderInput={(params) => <TextField {...params} label="Country" fullWidth />}
+                    renderInput={(p) => <TextField {...p} label="Country" fullWidth />}
                   />
                 </Grid>
-
                 <Grid item xs={12} sm={6}>
                   <Autocomplete
                     options={languages}
                     value={employee.language}
                     onChange={(_, v) => handleAutoChange('language', v || '')}
-                    renderInput={(params) => <TextField {...params} label="Language" fullWidth />}
+                    renderInput={(p) => <TextField {...p} label="Language" fullWidth />}
                   />
                 </Grid>
-
                 <Grid item xs={12} sm={6}>
                   <TextField
+                    fullWidth
                     label="Email"
-                    variant="outlined"
                     name="email"
                     value={employee.email}
                     onChange={handleInputChange}
-                    fullWidth
                   />
                 </Grid>
-
                 <Grid item xs={12} sm={6}>
                   <TextField
+                    fullWidth
                     label="Phone"
-                    variant="outlined"
                     name="phone"
                     value={employee.phone}
                     onChange={handleInputChange}
-                    fullWidth
                   />
                 </Grid>
-
                 <Grid item xs={12}>
                   <TextField
+                    fullWidth
                     label="Address"
-                    variant="outlined"
                     name="address"
                     value={employee.address}
                     onChange={handleInputChange}
-                    fullWidth
                   />
                 </Grid>
-
                 <Grid item xs={12}>
                   <SkillsInput skills={employee.skills} setSkills={handleSkillsChange} />
                 </Grid>
               </Grid>
-
               <Box sx={{ mt: 2 }}>
                 <Button
                   variant="contained"
-                  color="primary"
-                  onClick={handleSubmit}
+                  onClick={() => updateProfile(employee)}
                   disabled={updatingProfile}
                 >
-                  {updatingProfile ? 'Updating...' : 'Update Profile'}
+                  {updatingProfile ? 'Saving…' : 'Save All Changes'}
                 </Button>
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* ---------- Right column ---------- */}
-        <Grid item xs={12} md={8}>
-          <Card sx={{ boxShadow: 3, borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {/* RIGHT column (experience) */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ boxShadow: 3, borderRadius: 2, display: 'flex', flexDirection: 'column' }}>
             <CardContent sx={{ flex: 1, overflowY: 'auto', maxHeight: '80vh' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6" gutterBottom>
-                  Work Experience
-                </Typography>
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6">Work Experience</Typography>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={openAddDialog}>
                   Add Work Experience
                 </Button>
               </Box>
 
-              {workExperience.length === 0 ? (
-                <Typography>No work experience added yet.</Typography>
+              {employee.workExperience?.length ? (
+                // SINGLE container with the history line:
+                <Box sx={{ position: 'relative', pl: 4, borderLeft: '2px solid #e0e0e0' }}>
+                  {employee.workExperience
+                    .slice() // immutable copy
+                    .sort((a, b) => {
+                      // parse “to” dates; treat “Present” (or empty) as +∞
+                      const parse = (d: string) =>
+                        d.toLowerCase() === 'present' || !d
+                          ? Infinity
+                          : new Date(d).getTime();
+
+                      const aEnd = parse(a.to);
+                      const bEnd = parse(b.to);
+
+                      if (bEnd !== aEnd) {
+                        return bEnd - aEnd;
+                      }
+                      // tie-breaker: newer start date first
+                      return new Date(b.from).getTime() - new Date(a.from).getTime();
+                    })
+                    .map((exp, idx) => (
+                      <Box
+                        key={idx}
+                        sx={{
+                          position: 'relative',
+                          mb: 4,
+
+                          // make this a flex row
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        {/* the timeline dot */}
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            left: '-38px',
+                            top: '4px',
+                            width: 12,
+                            height: 12,
+                            borderRadius: '50%',
+                            backgroundColor: '#3f51b5',
+                          }}
+                        />
+
+                        {/* 80%: main content */}
+                        <Box sx={{ width: '80%' }}>
+                          <Typography variant="subtitle1">{exp.name}</Typography>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            {exp.company} • {exp.from} – {exp.to}
+                          </Typography>
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            {exp.description}
+                          </Typography>
+                        </Box>
+
+                        {/* 20%: action icons, aligned to the right */}
+                        <Box
+                          sx={{
+                            width: '20%',
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            gap: 1,
+                          }}
+                        >
+                          <IconButton size="small" onClick={() => openEditDialog(idx)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton size="small" onClick={() => handleRemoveExperience(idx)}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    ))}
+                </Box>
               ) : (
-                <Timeline position="alternate">
-                  {workExperience.map((exp, idx) => (
-                    <TimelineItem key={idx}>
-                      <TimelineSeparator>
-                        <TimelineDot />
-                        <TimelineConnector />
-                      </TimelineSeparator>
-                      <TimelineContent>
-                        <Card sx={{ p: 2 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Box>
-                              <Typography variant="subtitle1">{exp.name}</Typography>
-                              <Typography variant="subtitle2">Company: {exp.company}</Typography>
-                              <Typography variant="body2">
-                                From: {exp.from} - To: {exp.to}
-                              </Typography>
-                              <Typography variant="body2">{exp.description}</Typography>
-                            </Box>
-                            <Button sx={{ minWidth: 'auto' }} onClick={() => handleRemoveExperience(idx)}>
-                              <DeleteIcon />
-                            </Button>
-                          </Box>
-                        </Card>
-                      </TimelineContent>
-                    </TimelineItem>
-                  ))}
-                </Timeline>
+                <Typography>No work experience added yet.</Typography>
               )}
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
+      {/* dialogs */}
       <AddExperienceDialog
         dialogOpen={dialogOpen}
+        initialValues={editingExperience || undefined}
+        onAdd={handleSaveExperience}
         setDialogOpen={setDialogOpen}
-        onAdd={handleAddExperience}
-        onClose={() => setDialogOpen(false)}
+        onClose={closeDialog}
       />
-
       <ConfirmationDialog
         open={confirmationDialogOpen}
         title="Confirm Deletion"
@@ -346,12 +425,19 @@ const Profile: React.FC = () => {
   );
 };
 
-const convertToBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (err) => reject(err);
+/* ---------- utils ---------- */
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.onerror = () => rej(r.error || new Error('file read error'));
+    r.readAsDataURL(file);
   });
+
+const FullSpinner = () => (
+  <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+    <CircularProgress />
+  </Box>
+);
 
 export default Profile;
