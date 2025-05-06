@@ -287,7 +287,7 @@ const Profile: React.FC = () => {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <SkillsInput skills={employee.skills} setSkills={handleSkillsChange} />
+                  <SkillsInput skills={employee.skills || []} setSkills={handleSkillsChange} />
                 </Grid>
               </Grid>
               <Box sx={{ mt: 2 }}>
