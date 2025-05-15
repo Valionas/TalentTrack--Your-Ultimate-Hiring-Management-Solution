@@ -19,23 +19,83 @@ export interface Job extends Document {
   createdBy: string; // Added property to track the owner's email
 }
 
-const JobSchema: Schema = new Schema({
-  title: { type: String, required: true },
-  companyName: { type: String, required: true },
-  companyLogo: { type: String, required: true },
-  location: { type: String, required: true },
-  type: { type: String, required: true },
-  datePosted: { type: String, required: true },
-  skills: { type: [String], required: true },
-  description: { type: String, required: true },
-  salaryRange: { type: String },
-  experience: { type: String, required: true },
-  contactEmail: { type: String, required: true },
-  category: { type: String, required: true },
-  benefits: { type: [String], required: true },
-  applicationDeadline: { type: String, required: true },
-  jobId: { type: String, required: true },
-  createdBy: { type: String, required: true }, // New field for owner identification
+const JobSchema = new Schema({
+  title: {
+    type: String,
+    required: [true, 'Job title is required'],
+    trim: true,
+  },
+  companyName: {
+    type: String,
+    required: [true, 'Company name is required'],
+    trim: true,
+  },
+  companyLogo: {
+    type: String, // data URL or URL
+  },
+  location: {
+    type: String,
+    required: [true, 'Location is required'],
+  },
+  type: {
+    type: String,
+    enum: ['Full-Time', 'Part-Time', 'Contract'],
+    required: [true, 'Job type is required'],
+  },
+  datePosted: {
+    type: Date,
+    required: [true, 'Date posted is required'],
+    default: Date.now,
+  },
+  applicationDeadline: {
+    type: Date,
+    required: [true, 'Application deadline is required'],
+  },
+  skills: {
+    type: [String],
+    required: [true, 'At least one skill is required'],
+    validate: [(arr: string | any[]) => arr.length > 0, 'At least one skill is required'],
+  },
+  benefits: {
+    type: [String],
+    default: [],
+  },
+  description: {
+    type: String,
+    required: [true, 'Description is required'],
+  },
+  salaryRange: {
+    type: String,
+  },
+  experience: {
+    type: String,
+    required: [true, 'Experience level is required'],
+  },
+  contactEmail: {
+    type: String,
+    required: [true, 'Contact email is required'],
+    match: [/^\S+@\S+\.\S+$/, 'Please fill a valid email address'],
+  },
+  category: {
+    type: String,
+    required: [true, 'Category is required'],
+  },
+  jobId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  applicants: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],
 });
 
 const JobModel = mongoose.model<Job>('Job', JobSchema);

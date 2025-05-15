@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, MouseEvent } from 'react';
 import {
   Card,
   CardContent,
@@ -8,10 +8,8 @@ import {
   Grid,
   Chip,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Collapse,
+  Divider,
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -20,9 +18,17 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import SchoolIcon from '@mui/icons-material/School';
 import WorkIcon from '@mui/icons-material/Work';
 import BenefitsIcon from '@mui/icons-material/CardGiftcard';
+import CodeIcon from '@mui/icons-material/Code';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import CheckIcon from '@mui/icons-material/Check';
+import { styled } from '@mui/material/styles';
 import { JobResponse } from '../../packages/models/Job';
+
+import ConfirmApplyDialog from './ConfirmApplyDialog';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 
 interface JobCardProps {
   job: JobResponse;
@@ -31,26 +37,46 @@ interface JobCardProps {
   onApply: (job: JobResponse) => void;
 }
 
-const JobCard: React.FC<JobCardProps> = ({ job, onDelete, onUpdate, onApply }) => {
+const ActionBox = styled(Box)({
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: 8,
+});
+
+const JobCard: React.FC<JobCardProps> = ({
+  job,
+  onDelete,
+  onUpdate,
+  onApply,
+}) => {
   /* ---------- auth helpers ---------- */
   const currentUser = localStorage.getItem('currentUser') || '';
   const isOwner = job.createdBy === currentUser;
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
-  const alreadyApplied =
-    job.applicants && job.applicants.includes(currentUser);
-
+  const alreadyApplied = job.applicants?.includes(currentUser);
   const canApply = !isOwner && !isAdmin && !alreadyApplied;
 
-  /* ---------- confirm dialog state ---------- */
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  /* ---------- local state ---------- */
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
-  const openDialog = () => setConfirmOpen(true);
-  const closeDialog = () => setConfirmOpen(false);
+  /* ---------- handlers ---------- */
+  const handleCardClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-actions]')) return;
+    setExpanded((prev) => !prev);
+  };
 
-  const handleConfirm = () => {
-    closeDialog();
+  const handleApplyConfirm = () => {
+    setApplyOpen(false);
     onApply(job);
+  };
+
+  const handleDeleteConfirm = () => {
+    setDeleteOpen(false);
+    onDelete(job._id);
   };
 
   /* ---------- ui ---------- */
@@ -59,128 +85,206 @@ const JobCard: React.FC<JobCardProps> = ({ job, onDelete, onUpdate, onApply }) =
       <Card
         sx={{
           mb: 2,
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          '&:hover': { transform: 'scale(1.02)', boxShadow: 4 },
+          cursor: 'pointer',
+          transition: 'transform 0.15s, box-shadow 0.15s',
+          '&:hover': { transform: 'scale(1.015)', boxShadow: 4 },
         }}
+        onClick={handleCardClick}
       >
-        <CardContent>
-          <Grid container spacing={2}>
-            {/* -------- job title & company -------- */}
+        <CardContent sx={{ py: 1, '&:last-child': { pb: 1 } }}>
+          <Grid container spacing={1} alignItems="center">
+            {/* ------ title & company ------ */}
             <Grid item xs={12} md={3}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Avatar src={job.companyLogo} alt={job.companyName} sx={{ width: 56, height: 56, mr: 2 }} />
+                <Avatar
+                  src={job.companyLogo}
+                  alt={job.companyName}
+                  sx={{ width: 50, height: 50, mr: 1.5 }}
+                />
                 <Box>
-                  <Typography variant="h6">{job.title}</Typography>
-                  <Typography variant="subtitle2">{job.companyName}</Typography>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    {job.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {job.companyName}
+                  </Typography>
                 </Box>
               </Box>
             </Grid>
 
-            {/* -------- details -------- */}
-            <Grid item xs={12} md={3}>
-              <Typography variant="body2" color="textSecondary">
-                <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} />
-                {job.location} | {job.type}
-              </Typography>
-              {job.salaryRange && (
-                <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                  <MonetizationOnIcon fontSize="small" sx={{ mr: 0.5 }} />
-                  {job.salaryRange}
+            {/* ------ quick facts ------ */}
+            <Grid item xs={12} md={4}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  {job.location} | {job.type}
                 </Typography>
-              )}
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                <SchoolIcon fontSize="small" sx={{ mr: 0.5 }} />
-                {job.experience}
-              </Typography>
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                <WorkIcon fontSize="small" sx={{ mr: 0.5 }} />
-                {job.category}
-              </Typography>
+                {job.salaryRange && (
+                  <Typography variant="body2" color="text.secondary">
+                    <MonetizationOnIcon fontSize="small" sx={{ mr: 0.5 }} />
+                    {job.salaryRange}
+                  </Typography>
+                )}
+                <Typography variant="body2" color="text.secondary">
+                  <SchoolIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  {job.experience}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <WorkIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  {job.category}
+                </Typography>
+              </Box>
             </Grid>
 
-            {/* -------- benefits -------- */}
+            {/* ------ skills + benefits tags ------ */}
             <Grid item xs={12} md={3}>
-              {job.benefits.map((b, i) => (
-                <Chip key={i} label={b} icon={<BenefitsIcon fontSize="small" />}
-                  variant="outlined" sx={{ mr: 1, mb: 1 }} />
+              {job.skills.slice(0, 3).map((skill, i) => (
+                <Chip
+                  key={`skill-${i}`}
+                  size="small"
+                  label={skill}
+                  icon={<CodeIcon fontSize="small" />}
+                  variant="outlined"
+                  sx={{ mr: 0.5, mb: 0.5 }}
+                />
               ))}
+              {job.skills.length > 3 && (
+                <Chip
+                  size="small"
+                  label={`+${job.skills.length - 3} skills`}
+                  variant="outlined"
+                  sx={{ mr: 0.5, mb: 0.5 }}
+                />
+              )}
+
+              {job.benefits.slice(0, 3).map((b, i) => (
+                <Chip
+                  key={`benefit-${i}`}
+                  size="small"
+                  label={b}
+                  icon={<BenefitsIcon fontSize="small" />}
+                  variant="outlined"
+                  sx={{ mr: 0.5, mb: 0.5 }}
+                />
+              ))}
+              {job.benefits.length > 3 && (
+                <Chip
+                  size="small"
+                  label={`+${job.benefits.length - 3} benefits`}
+                  variant="outlined"
+                  sx={{ mr: 0.5, mb: 0.5 }}
+                />
+              )}
             </Grid>
 
-            {/* -------- actions & meta -------- */}
-            <Grid item xs={12} md={3}>
-              <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+            {/* ------ actions ------ */}
+            <Grid item xs={12} md={2}>
+              <ActionBox data-actions>
                 {(isOwner || isAdmin) && (
-                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                    <Button variant="contained" size="small" startIcon={<EditIcon />} onClick={() => onUpdate(job)}>
+                  <>
+                    <Button
+                      size="small"
+                      startIcon={<EditIcon />}
+                      onClick={() => onUpdate(job)}
+                    >
                       Update
                     </Button>
-                    <Button variant="contained" color="error" size="small" startIcon={<DeleteIcon />} onClick={() => onDelete(job._id)}>
+                    <Button
+                      size="small"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => setDeleteOpen(true)}
+                    >
                       Delete
                     </Button>
-                  </Box>
+                  </>
                 )}
 
                 {canApply && (
-                  <Box sx={{ my: 1 }}>
-                    <Button variant="outlined" color="success" onClick={openDialog}>
-                      Apply
-                    </Button>
-                  </Box>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="success"
+                    onClick={() => setApplyOpen(true)}
+                    startIcon={<CheckIcon fontSize="small" />}
+                  >
+                    Apply
+                  </Button>
                 )}
 
-                <Box sx={{ borderTop: '1px solid #ddd', mt: 1, pt: 1 }}>
-                  <Typography variant="body2" color="textSecondary">
-                    <CalendarTodayIcon fontSize="small" sx={{ mr: 0.5 }} />
-                    {job.datePosted}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                    Application Deadline: {job.applicationDeadline}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                    Job ID: {job.jobId}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                    <EmailIcon fontSize="small" sx={{ mr: 0.5 }} />
-                    {job.contactEmail}
-                  </Typography>
-                </Box>
-              </Box>
+                <Button
+                  size="small"
+                  sx={{ minWidth: 32 }}
+                  aria-label={expanded ? 'collapse details' : 'expand details'}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpanded((prev) => !prev);
+                  }}
+                >
+                  {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </Button>
+              </ActionBox>
             </Grid>
           </Grid>
         </CardContent>
 
-        {/* -------- skills -------- */}
-        <CardContent>
-          <Grid container spacing={1} justifyContent={{ xs: 'center', md: 'flex-start' }}>
-            {job.skills.map((skill, i) => (
-              <Grid item key={i}><Chip label={skill} variant="outlined" /></Grid>
-            ))}
-          </Grid>
-        </CardContent>
+        {/* ---------- details section ---------- */}
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+          <Divider />
+          <CardContent sx={{ pt: 2 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
+              {job.skills.map((skill, i) => (
+                <Chip key={i} label={skill} size="small" variant="outlined" />
+              ))}
+            </Box>
 
-        {/* -------- description -------- */}
-        <CardContent>
-          <Typography variant="body2" color="textSecondary">
-            {job.description}
-          </Typography>
-        </CardContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {job.description}
+            </Typography>
+
+            <Grid container spacing={1}>
+              <Grid item xs={12} sm={4} md={3}>
+                <Typography variant="body2" color="text.secondary">
+                  <CalendarTodayIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  Posted:&nbsp;{job.datePosted}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4} md={3}>
+                <Typography variant="body2" color="text.secondary">
+                  Deadline:&nbsp;{job.applicationDeadline}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4} md={3}>
+                <Typography variant="body2" color="text.secondary">
+                  Job ID:&nbsp;{job.jobId}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4} md={3}>
+                <Typography variant="body2" color="text.secondary">
+                  <EmailIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  {job.contactEmail}
+                </Typography>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Collapse>
       </Card>
 
-      {/* -------- confirmation dialog -------- */}
-      <Dialog open={confirmOpen} onClose={closeDialog}>
-        <DialogTitle>Confirm application?</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
-            Are you sure you want to apply for&nbsp;“{job.title}” at {job.companyName}?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleConfirm}>
-            Apply
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* ---------- confirmation dialogs ---------- */}
+      <ConfirmApplyDialog
+        open={applyOpen}
+        onClose={() => setApplyOpen(false)}
+        onConfirm={handleApplyConfirm}
+        jobTitle={job.title}
+        companyName={job.companyName}
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        jobTitle={job.title}
+      />
     </>
   );
 };
