@@ -21,10 +21,13 @@ export interface Contract {
     // The contract status
     status: ContractStatus;
 
+    // Array of user‐IDs for whom this contract has been “soft‐deleted”
+    deletedFor?: string[];
+
     // Possibly track creation and update times
     createdAt?: string;
     updatedAt?: string;
-    applicantsCount?: number;
 
-    // Add any other fields your backend may return
+    // Optional extra metadata
+    applicantsCount?: number;
 }

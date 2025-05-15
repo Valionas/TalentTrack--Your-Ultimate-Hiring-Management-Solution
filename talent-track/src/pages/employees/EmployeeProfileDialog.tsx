@@ -1,3 +1,5 @@
+// src/components/EmployeeProfileDialog.tsx
+
 import React, { useState } from 'react';
 import {
     Dialog,
@@ -33,105 +35,128 @@ const EmployeeProfileDialog: React.FC<Props> = ({
 }) => {
     const [tempRating, setTempRating] = useState<number | null>(null);
     const [msgOpen, setMsgOpen] = useState(false);
+    const sendMessageMutation = useSendMessageMutation();
 
-    /* ------ mutation hook for sending messages ------ */
-    const { mutate: sendMessage } = useSendMessageMutation();
+    if (!employee) return null;
 
-    const currentUserEmail = localStorage.getItem('currentUser') || '';
+    // currentUser is the logged-in user's ID
+    const currentUser = localStorage.getItem('currentUser') || '';
+    const isSelf = employee._id === currentUser;
 
-    /* handle message send from the compose dialog */
-    const handleSend = (vals: { receiver: string; topic: string; description: string }) => {
-        if (!employee) return;
+    const hasSkills = Array.isArray(employee.skills) && employee.skills.length > 0;
+    const hasExperience =
+        Array.isArray(employee.workExperience) && employee.workExperience.length > 0;
 
+    // Dynamic column widths
+    // - Only bio: full width
+    // - Bio + one extra: split 6/6
+    // - Bio + two extras: split 4/4/4
+    const bioWidth = !hasSkills && !hasExperience
+        ? 12
+        : hasSkills && hasExperience
+            ? 4
+            : 6;
+    const extraWidth = hasSkills && hasExperience ? 4 : 6;
+
+    const handleSend = (vals: {
+        receiver: string;
+        topic: string;
+        description: string;
+    }) => {
         const payload: IMessage = {
             date: new Date().toISOString(),
-            sender: currentUserEmail,
+            sender: currentUser,
             receiver: vals.receiver,
             topic: vals.topic,
             description: vals.description,
         };
-
-        sendMessage(payload, {
+        sendMessageMutation.mutate(payload, {
             onSuccess: () => {
                 toast.success('Message sent');
-                setMsgOpen(false);          // ✅ close dialog on success
+                setMsgOpen(false);
             },
         });
     };
 
-    if (!employee) return null;
-
     return (
         <>
             <Dialog fullWidth maxWidth="md" open={open} onClose={onClose}>
-                <DialogTitle>{employee.firstName} {employee.lastName}</DialogTitle>
+                <DialogTitle>
+                    {employee.firstName} {employee.lastName}
+                </DialogTitle>
 
                 <DialogContent dividers>
                     <Grid container spacing={3}>
-                        {/* ----- Left column ----- */}
-                        <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
-                            <Avatar
-                                src={employee.avatar || 'https://via.placeholder.com/150'}
-                                sx={{ width: 140, height: 140, mb: 2, mx: 'auto' }}
-                            />
-                            <Typography variant="body2" color="text.secondary">
-                                {employee.industry}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {employee.country} • Age {employee.age}
-                            </Typography>
-                            <Box sx={{ mt: 1 }}>
-                                <Rating
-                                    value={tempRating ?? (employee.rating ?? 0)}
-                                    precision={0.5}
-                                    onChange={(_, v) => setTempRating(v)}
+                        {/* Column 1: Bio */}
+                        <Grid item xs={12} sm={bioWidth}>
+                            <Box textAlign="center">
+                                <Avatar
+                                    src={employee.avatar || 'https://via.placeholder.com/150'}
+                                    sx={{ width: 140, height: 140, mb: 2, mx: 'auto' }}
                                 />
+                                <Typography variant="body2" color="text.secondary">
+                                    {employee.industry}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {employee.country} • Age {employee.age}
+                                </Typography>
+                                <Box sx={{ mt: 1 }}>
+                                    <Rating
+                                        value={tempRating ?? (employee.rating ?? 0)}
+                                        precision={0.5}
+                                        onChange={(_, v) => setTempRating(v)}
+                                    />
+                                </Box>
                             </Box>
                         </Grid>
 
-                        {/* ----- Right column ----- */}
-                        <Grid item xs={12} sm={8}>
-                            {(employee?.skills ?? []).length > 0 && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle2" gutterBottom>
-                                        Skills
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                        {(employee.skills ?? []).map((s) => (
-                                            <Chip key={s} label={s} size="small" />
-                                        ))}
-                                    </Box>
+                        {/* Column 2: Skills */}
+                        {hasSkills && (
+                            <Grid item xs={12} sm={extraWidth}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Skills
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                    {employee.skills!.map((s) => (
+                                        <Chip key={s} label={s} size="small" />
+                                    ))}
                                 </Box>
-                            )}
+                            </Grid>
+                        )}
 
-                            {(employee.workExperience ?? []).length > 0 && (
-                                <>
-                                    <Typography variant="subtitle2" gutterBottom>
-                                        Work Experience
-                                    </Typography>
-                                    <Box sx={{ maxHeight: 220, overflowY: 'auto', pr: 1 }}>
-                                        {(employee.workExperience ?? []).map((wx, i) => (
-                                            <Box key={i} sx={{ mb: 1 }}>
-                                                <Typography variant="body2" fontWeight="bold">
-                                                    {wx.name} – {wx.company}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {wx.from} – {wx.to}
-                                                </Typography>
-                                                <Typography variant="body2">{wx.description}</Typography>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                </>
-                            )}
-                        </Grid>
+                        {/* Column 3: Work Experience */}
+                        {hasExperience && (
+                            <Grid item xs={12} sm={extraWidth}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Work Experience
+                                </Typography>
+                                <Box sx={{ maxHeight: 220, overflowY: 'auto', pr: 1 }}>
+                                    {employee.workExperience!.map((wx, i) => (
+                                        <Box key={i} sx={{ mb: 2 }}>
+                                            <Typography variant="body2" fontWeight="bold">
+                                                {wx.name} – {wx.company}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {wx.from} – {wx.to}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                {wx.description}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </Grid>
+                        )}
                     </Grid>
                 </DialogContent>
 
                 <DialogActions>
-                    <Button variant="outlined" onClick={() => setMsgOpen(true)}>
-                        Message
-                    </Button>
+                    {/* Hide Message button if viewing your own profile */}
+                    {!isSelf && (
+                        <Button variant="outlined" onClick={() => setMsgOpen(true)}>
+                            Message
+                        </Button>
+                    )}
                     <Button
                         variant="contained"
                         onClick={() => {
@@ -139,12 +164,12 @@ const EmployeeProfileDialog: React.FC<Props> = ({
                             onClose();
                         }}
                     >
-                        {tempRating ? 'Submit Rating' : 'Close'}
+                        {tempRating != null ? 'Submit Rating' : 'Close'}
                     </Button>
                 </DialogActions>
             </Dialog>
 
-            {/* Message dialog with receiver pre‑filled */}
+            {/* Message compose dialog */}
             <MessageComposeDialog
                 open={msgOpen}
                 defaultReceiver={employee.email}
