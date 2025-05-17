@@ -121,7 +121,7 @@ const Messages: React.FC = () => {
                                                 edge="end"
                                                 aria-label="view"
                                                 color="primary"
-                                                onClick={() => setViewMsg({ ...m, sender: m.sender ?? '' })}
+                                                onClick={() => setViewMsg({ ...m, sender: m.sender ?? '', receiver: m.receiver ?? '' })}
                                             >
                                                 <VisibilityIcon />
                                             </IconButton>
@@ -138,7 +138,7 @@ const Messages: React.FC = () => {
                                     sx={{ alignItems: 'flex-start' }}
                                 >
                                     <ListItemAvatar>
-                                        <Avatar src={avatarMap[from] || undefined} />
+                                        <Avatar src={from ? avatarMap[from] || undefined : undefined} />
                                     </ListItemAvatar>
 
                                     <Box sx={{ flex: 1, ml: 2 }}>
