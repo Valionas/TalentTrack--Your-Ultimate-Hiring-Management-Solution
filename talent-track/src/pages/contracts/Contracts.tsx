@@ -16,7 +16,14 @@ import {
   IconButton,
   Typography,
   CircularProgress,
+  Chip,
 } from '@mui/material';
+import WorkIcon from '@mui/icons-material/Work';
+import EmailIcon from '@mui/icons-material/Email';
+import PersonIcon from '@mui/icons-material/Person';
+import PublicIcon from '@mui/icons-material/Public';
+import CakeIcon from '@mui/icons-material/Cake';
+import InfoIcon from '@mui/icons-material/Info';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import { toast } from 'react-toastify';
 import {
@@ -46,23 +53,36 @@ type SortKey =
   | 'age'
   | 'status';
 
+interface Column {
+  key: SortKey;
+  label: string;
+  Icon: React.ElementType;
+}
+
+const columns: Column[] = [
+  { key: 'jobName', label: 'Job', Icon: WorkIcon },
+  { key: 'contactEmail', label: 'Email', Icon: EmailIcon },
+  { key: 'candidateName', label: 'Candidate', Icon: PersonIcon },
+  { key: 'country', label: 'Country', Icon: PublicIcon },
+  { key: 'age', label: 'Age', Icon: CakeIcon },
+  { key: 'status', label: 'Status', Icon: InfoIcon },
+];
+
+const statusColors: Record<string, 'default' | 'primary' | 'success' | 'error'> = {
+  Applied: 'primary',
+  Pending: 'default',
+  Approved: 'success',
+  Rejected: 'error',
+};
+
 interface ContractRow extends Contract {
   user: UserProfileResponse | null;
 }
 
-const columns: { key: SortKey; label: string }[] = [
-  { key: 'jobName', label: 'Job' },
-  { key: 'contactEmail', label: 'Email' },
-  { key: 'candidateName', label: 'Candidate' },
-  { key: 'country', label: 'Country' },
-  { key: 'age', label: 'Age' },
-  { key: 'status', label: 'Status' },
-];
-
 const Contracts: React.FC = () => {
   const currentUser = localStorage.getItem('currentUser') || '';
 
-  // Fetch data
+  // Data fetching
   const {
     data: contracts,
     isLoading: cLoading,
@@ -103,15 +123,13 @@ const Contracts: React.FC = () => {
   // Lookup owned jobs
   const myJobsById = useMemo<Record<string, JobResponse>>(() => {
     if (!jobs) return {};
-    return jobs
-      .filter(j => j.createdBy === currentUser)
-      .reduce((acc, j) => {
-        acc[j._id] = j;
-        return acc;
-      }, {} as Record<string, JobResponse>);
+    return jobs.reduce((acc, j) => {
+      if (j.createdBy === currentUser) acc[j._id] = j;
+      return acc;
+    }, {} as Record<string, JobResponse>);
   }, [jobs, currentUser]);
 
-  // Build and filter rows
+  // Build & filter rows
   const rows: ContractRow[] = useMemo(() => {
     if (!contracts || !users || !jobs) return [];
     return contracts
@@ -127,8 +145,8 @@ const Contracts: React.FC = () => {
   const [orderBy, setOrderBy] = useState<SortKey>('status');
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
   const handleSort = (key: SortKey) => {
-    const isAsc = orderBy === key && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
+    const asc = orderBy === key && order === 'asc';
+    setOrder(asc ? 'desc' : 'asc');
     setOrderBy(key);
   };
   const sorted = useMemo(() => {
@@ -137,16 +155,20 @@ const Contracts: React.FC = () => {
       let bVal: string | number = '';
       switch (orderBy) {
         case 'candidateName':
-          aVal = a.user ? `${a.user.firstName} ${a.user.lastName}`.toLowerCase() : '';
-          bVal = b.user ? `${b.user.firstName} ${b.user.lastName}`.toLowerCase() : '';
+          aVal = a.user
+            ? `${a.user.firstName} ${a.user.lastName}`.toLowerCase()
+            : '';
+          bVal = b.user
+            ? `${b.user.firstName} ${b.user.lastName}`.toLowerCase()
+            : '';
           break;
         case 'country':
           aVal = a.user?.country?.toLowerCase() || '';
           bVal = b.user?.country?.toLowerCase() || '';
           break;
         case 'age':
-          aVal = a.user?.age || 0;
-          bVal = b.user?.age || 0;
+          aVal = a.user?.age ?? 0;
+          bVal = b.user?.age ?? 0;
           break;
         default:
           aVal = String((a as any)[orderBy] ?? '').toLowerCase();
@@ -166,20 +188,11 @@ const Contracts: React.FC = () => {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [activeRow, setActiveRow] = useState<ContractRow | null>(null);
 
-  const onAcceptClick = (row: ContractRow) => {
-    setActiveRow(row);
-    setConfirmAcceptOpen(true);
-  };
-  const onCancelClick = (row: ContractRow) => {
-    setActiveRow(row);
-    setConfirmCancelOpen(true);
-  };
-  const onDeleteClick = (row: ContractRow) => {
-    setActiveRow(row);
-    setConfirmDeleteOpen(true);
-  };
+  const onAccept = (r: ContractRow) => { setActiveRow(r); setConfirmAcceptOpen(true); };
+  const onCancel = (r: ContractRow) => { setActiveRow(r); setConfirmCancelOpen(true); };
+  const onDelete = (r: ContractRow) => { setActiveRow(r); setConfirmDeleteOpen(true); };
 
-  // Loading / Error
+  // Loading / error
   if (cLoading || uLoading || jLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
@@ -205,7 +218,10 @@ const Contracts: React.FC = () => {
                     direction={orderBy === col.key ? order : 'asc'}
                     onClick={() => handleSort(col.key)}
                   >
-                    {col.label}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <col.Icon fontSize="small" />
+                      {col.label}
+                    </Box>
                   </TableSortLabel>
                 </TableCell>
               ))}
@@ -217,67 +233,75 @@ const Contracts: React.FC = () => {
             {sorted.length === 0 && (
               <TableRow>
                 <TableCell colSpan={columns.length + 2} align="center">
-                  <Typography>No contracts to display.</Typography>
+                  No contracts to display.
                 </TableCell>
               </TableRow>
             )}
-            {sorted.map(row => {
-              const isOwner = Boolean(myJobsById[row.jobId]);
-              const isApplicant = row.userId === currentUser;
-              const displayStatus =
-                isOwner && row.status === 'Applied' ? 'Pending' : row.status;
-
+            {sorted.map(r => {
+              const isOwner = Boolean(myJobsById[r.jobId]);
+              const isApplicant = r.userId === currentUser;
+              const displayStatus = isOwner && r.status === 'Applied'
+                ? 'Pending'
+                : r.status;
               const showAccept = isOwner && displayStatus === 'Pending';
-              const showCancel =
-                (isOwner || isApplicant) &&
-                ['Applied', 'Pending'].includes(displayStatus);
-              const showTrash =
-                ['Approved', 'Rejected'].includes(displayStatus);
+              const showCancel = (isOwner || isApplicant) && ['Applied', 'Pending'].includes(displayStatus);
+              const showTrash = ['Approved', 'Rejected'].includes(displayStatus);
 
               return (
-                <TableRow key={row._id} hover>
+                <TableRow key={r._id} hover>
                   <TableCell>
                     <Avatar
-                      src={row.user?.avatar || undefined}
-                      sx={{ cursor: row.user ? 'pointer' : undefined }}
-                      onClick={() => {
-                        if (row.user) {
-                          setSelectedUser(row.user);
-                          setProfileOpen(true);
-                        }
-                      }}
+                      src={r.user?.avatar || undefined}
+                      sx={{ cursor: r.user ? 'pointer' : undefined }}
+                      onClick={() =>
+                        r.user && (setSelectedUser(r.user), setProfileOpen(true))
+                      }
                     />
                   </TableCell>
-                  <TableCell>{row.jobName}</TableCell>
-                  <TableCell>{row.contactEmail}</TableCell>
+                  <TableCell>{r.jobName}</TableCell>
+                  <TableCell>{r.contactEmail}</TableCell>
                   <TableCell>
-                    {row.user
-                      ? `${row.user.firstName} ${row.user.lastName}`
+                    {r.user
+                      ? `${r.user.firstName} ${r.user.lastName}`
                       : '—'}
                   </TableCell>
-                  <TableCell>{row.user?.country || '—'}</TableCell>
-                  <TableCell>{row.user?.age ?? '—'}</TableCell>
-                  <TableCell>{displayStatus}</TableCell>
+                  <TableCell>{r.user?.country || '—'}</TableCell>
+                  <TableCell>{r.user?.age ?? '—'}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={displayStatus}
+                      color={statusColors[displayStatus] || 'default'}
+                      size="small"
+                    />
+                  </TableCell>
                   <TableCell>
                     {showAccept && (
-                      <Button size="small" onClick={() => onAcceptClick(row)}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        sx={{ mr: 1 }}
+                        onClick={() => onAccept(r)}
+                      >
                         Accept
                       </Button>
                     )}
                     {showCancel && (
-                      <IconButton
-                        size="small"
+                      <Button
+                        variant="outlined"
                         color="error"
-                        onClick={() => onCancelClick(row)}
+                        size="small"
+                        sx={{ mr: 1 }}
+                        onClick={() => onCancel(r)}
                       >
-                        <DeleteOutlinedIcon />
-                      </IconButton>
+                        Cancel
+                      </Button>
                     )}
                     {showTrash && (
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => onDeleteClick(row)}
+                        onClick={() => onDelete(r)}
                       >
                         <DeleteOutlinedIcon />
                       </IconButton>
@@ -315,21 +339,18 @@ const Contracts: React.FC = () => {
           candidateName={`${activeRow.user?.firstName} ${activeRow.user?.lastName}`}
           onClose={() => setConfirmCancelOpen(false)}
           onConfirm={() => {
-            // hard delete + remove from job applicants
             hardDeleteContract(activeRow._id!);
             const job = jobs!.find(j => j._id === activeRow.jobId);
             if (job) {
-              const updatedApplicants = (job.applicants ?? []).filter(
-                id => id !== activeRow.userId
-              );
-              updateJob({ id: job._id, data: { ...job, applicants: updatedApplicants } });
+              const updated = (job.applicants ?? []).filter(id => id !== activeRow.userId);
+              updateJob({ id: job._id, data: { ...job, applicants: updated } });
             }
             setConfirmCancelOpen(false);
           }}
         />
       )}
 
-      {/* Confirm Delete (soft-delete) */}
+      {/* Confirm Delete */}
       {activeRow && (
         <ConfirmDeleteDialog
           open={confirmDeleteOpen}

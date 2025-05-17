@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+// src/components/MessageComposeDialog.tsx
+
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -6,10 +8,17 @@ import {
     DialogActions,
     TextField,
     Button,
+    Box,
+    Avatar,
+    Autocomplete,
+    Typography,
+    CircularProgress,
 } from '@mui/material';
+import { useAllUsersQuery } from '../../api/services/userService';
+import { UserProfileResponse } from '../../packages/models/UserProfile';
 
 interface ComposeValues {
-    receiver: string;
+    receiver: string;       // this will be user._id
     topic: string;
     description: string;
 }
@@ -18,7 +27,7 @@ interface Props {
     open: boolean;
     onClose: () => void;
     onSend: (values: ComposeValues) => void;
-    defaultReceiver?: string; // pre‑fill & lock when provided
+    defaultReceiver?: string; // an email address when called from EmployeeProfileDialog
 }
 
 const MessageComposeDialog: React.FC<Props> = ({
@@ -27,63 +36,136 @@ const MessageComposeDialog: React.FC<Props> = ({
     onSend,
     defaultReceiver = '',
 }) => {
+    const { data: users, isLoading } = useAllUsersQuery();
     const [values, setValues] = useState<ComposeValues>({
-        receiver: defaultReceiver,
+        receiver: '',
         topic: '',
         description: '',
     });
+    const [selectedUser, setSelectedUser] = useState<UserProfileResponse | null>(null);
 
-    /* reset when dialog re‑opens or defaultReceiver changes */
+    // Whenever the dialog opens or defaultReceiver (email) changes, initialize:
     useEffect(() => {
-        if (open) {
-            setValues({ receiver: defaultReceiver, topic: '', description: '' });
+        if (!open) return;
+        // Reset text fields
+        setValues({ receiver: '', topic: '', description: '' });
+        if (defaultReceiver && users) {
+            // Look up by email:
+            const match = users.find(u => u.email === defaultReceiver);
+            if (match) {
+                setSelectedUser(match);
+                setValues(v => ({ ...v, receiver: String(match._id) }));
+            } else {
+                setSelectedUser(null);
+            }
+        } else {
+            setSelectedUser(null);
         }
-    }, [open, defaultReceiver]);
-
-    const handleInput =
-        (field: keyof ComposeValues) =>
-            (e: React.ChangeEvent<HTMLInputElement>) =>
-                setValues({ ...values, [field]: e.target.value });
+    }, [open, defaultReceiver, users]);
 
     const handleSend = () => {
         onSend(values);
         onClose();
     };
 
+    // For Autocomplete:
+    const options = useMemo(() => users || [], [users]);
+
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
             <DialogTitle>Compose Message</DialogTitle>
             <DialogContent>
-                <TextField
-                    label="Receiver"
-                    fullWidth
-                    value={values.receiver}
-                    onChange={handleInput('receiver')}
-                    disabled={Boolean(defaultReceiver)}
-                    sx={{ mt: 1 }}
-                />
-                <TextField
-                    label="Topic"
-                    fullWidth
-                    value={values.topic}
-                    onChange={handleInput('topic')}
-                    sx={{ mt: 2 }}
-                />
-                <TextField
-                    label="Message"
-                    fullWidth
-                    multiline
-                    rows={4}
-                    value={values.description}
-                    onChange={handleInput('description')}
-                    sx={{ mt: 2 }}
-                />
+                {isLoading ? (
+                    <Box display="flex" justifyContent="center" my={2}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                    <>
+                        {/* Avatar preview */}
+                        {selectedUser && (
+                            <Box textAlign="center" mb={2}>
+                                <Avatar
+                                    src={selectedUser.avatar}
+                                    sx={{ width: 80, height: 80, mx: 'auto' }}
+                                />
+                                <Typography variant="h6" mt={1}>
+                                    {selectedUser.firstName} {selectedUser.lastName}
+                                </Typography>
+                            </Box>
+                        )}
+
+                        <Autocomplete
+                            options={options}
+                            disabled={Boolean(defaultReceiver)}
+                            getOptionLabel={u => `${u.firstName} ${u.lastName} (${u.email})`}
+                            value={selectedUser}
+                            onChange={(_, user) => {
+                                if (user) {
+                                    setSelectedUser(user);
+                                    setValues(v => ({ ...v, receiver: String(user._id) }));
+                                } else {
+                                    setSelectedUser(null);
+                                    setValues(v => ({ ...v, receiver: '' }));
+                                }
+                            }}
+                            isOptionEqualToValue={(opt, val) => opt._id === val._id}
+                            renderOption={(props, user) => (
+                                <Box
+                                    component="li"
+                                    {...props}
+                                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                                >
+                                    <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} />
+                                    <Box>
+                                        <Typography variant="body2">
+                                            {user.firstName} {user.lastName}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {user.email}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            )}
+                            renderInput={params => (
+                                <TextField
+                                    {...params}
+                                    label="Receiver"
+                                    fullWidth
+                                    sx={{ mt: 1 }}
+                                />
+                            )}
+                        />
+
+                        <TextField
+                            label="Topic"
+                            fullWidth
+                            value={values.topic}
+                            onChange={e => setValues(v => ({ ...v, topic: e.target.value }))}
+                            sx={{ mt: 2 }}
+                        />
+                        <TextField
+                            label="Message"
+                            fullWidth
+                            multiline
+                            rows={4}
+                            value={values.description}
+                            onChange={e =>
+                                setValues(v => ({ ...v, description: e.target.value }))
+                            }
+                            sx={{ mt: 2 }}
+                        />
+                    </>
+                )}
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose} color="secondary">
                     Cancel
                 </Button>
-                <Button onClick={handleSend} variant="contained">
+                <Button
+                    onClick={handleSend}
+                    variant="contained"
+                    disabled={!values.receiver}
+                >
                     Send
                 </Button>
             </DialogActions>
