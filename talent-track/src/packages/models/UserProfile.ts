@@ -1,3 +1,18 @@
+// packages/models/UserProfile.ts
+
+export interface Rating {
+    raterId: string;
+    grade: number;
+}
+
+export interface WorkExperience {
+    name: string;
+    from: string;
+    to: string;
+    description: string;
+    company: string;
+}
+
 export interface UserProfile {
     firstName: string;
     lastName: string;
@@ -10,18 +25,11 @@ export interface UserProfile {
     phone?: string;
     address?: string;
     skills?: string[];
-    rating?: number;
+    ratings?: Rating[];
     workExperience?: WorkExperience[] | null;
 }
 
 export interface UserProfileResponse extends UserProfile {
-    _id: string | number;
+    _id: string;
 }
 
-export interface WorkExperience {
-    name: string;
-    from: string;
-    to: string;
-    description: string;
-    company: string;
-}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogTitle, DialogActions, Button } from '@mui/material';
+import { Dialog, DialogTitle, DialogActions, Button, DialogContent, Typography } from '@mui/material';
 
 interface Props {
     open: boolean;
@@ -20,6 +20,14 @@ const ConfirmDialog: React.FC<Props> = ({
 }) => (
     <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth>
         <DialogTitle>{title}</DialogTitle>
+        <DialogContent>
+            <Typography>
+                Are you sure you want to delete this message?
+            </Typography>
+            <Typography>
+                This action cannot be undone.
+            </Typography>
+        </DialogContent>
         <DialogActions>
             <Button onClick={onCancel}>{cancelText}</Button>
             <Button color="error" onClick={onConfirm} variant="contained">

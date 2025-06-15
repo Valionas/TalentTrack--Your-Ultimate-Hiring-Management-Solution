@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, Typography, Avatar, Box, ButtonBase } from '@mui/material';
 import Rating from '@mui/material/Rating';
 import { UserProfile } from '../../packages/models/UserProfile';
+import { calculateAverageRating } from './utils';
 
 interface Props {
   employee: UserProfile;
@@ -51,7 +52,7 @@ const EmployeeCard: React.FC<Props> = ({ employee, onClick }) => (
           <Typography variant="body2" color="text.secondary">
             Rating:
           </Typography>
-          <Rating value={employee.rating} precision={0.5} readOnly />
+          <Rating value={employee.ratings ? calculateAverageRating(employee.ratings) : 0} precision={0.5} readOnly />
         </Box>
 
         {employee.skills && employee.skills.length > 0 && (

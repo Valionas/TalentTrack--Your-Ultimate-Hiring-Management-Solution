@@ -12,12 +12,13 @@ import {
   Typography,
   Autocomplete,
 } from '@mui/material';
-import { useAllUsersQuery } from '../../api/services/userService';
+import { useAllUsersQuery, useRateUserMutation } from '../../api/services/userService';
 import { UserProfileResponse } from '../../packages/models/UserProfile';
 import EmployeeCard from './EmployeeCard';
 import EmployeeProfileDialog from './EmployeeProfileDialog';
 import { industries } from '../../constants/industries';
 import { countries } from '../../constants/countries';
+import { toast } from 'react-toastify';
 
 type SortOpt = 'nameAsc' | 'nameDesc' | 'ageAsc' | 'ageDesc';
 
@@ -32,7 +33,12 @@ const Employees: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeEmp, setActiveEmp] = useState<UserProfileResponse | null>(null);
 
-  const { data: employees, isLoading, isError } = useAllUsersQuery();
+  const { data: employees, isLoading, isError, refetch: loadUsers } = useAllUsersQuery();
+
+  const rateUserMutation = useRateUserMutation({
+    onSuccess: () => { toast.success('Rating submitted!'); loadUsers(); },
+    onError: () => { toast.error('Failed to submit rating'); },
+  });
 
   /* ---------- filter helper ---------- */
   const filterEmployees = (
@@ -84,8 +90,10 @@ const Employees: React.FC = () => {
   const handleMessage = (emp: UserProfileResponse) =>
     console.log('message →', emp.email);
 
-  const handleRate = (emp: UserProfileResponse, val: number | null) =>
-    console.log('rate →', emp.firstName, val);
+  const handleRate = (emp: UserProfileResponse, grade: number) => {
+    rateUserMutation.mutate({ userId: emp._id.toString(), grade });
+  };
+
 
   /* ---------- loading / error ---------- */
   if (isLoading)

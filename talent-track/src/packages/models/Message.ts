@@ -1,4 +1,7 @@
+// src/packages/models/Message.ts
+
 export interface Message {
+    _id?: string;
     date: string;
     sender: string;
     receiver: string;
@@ -8,18 +11,9 @@ export interface Message {
     receiverId?: string;
     senderEmail?: string;
     receiverEmail?: string;
+    deletedFor?: string[];
 }
 
-export interface MessageResponse {
+export interface MessageResponse extends Message {
     _id: string;
-    date: string;
-    senderId?: string;
-    receiverId?: string;
-    sender?: string;
-    receiver?: string;
-    senderEmail?: string;
-    receiverEmail?: string;
-    topic: string;
-    description: string;
 }
-

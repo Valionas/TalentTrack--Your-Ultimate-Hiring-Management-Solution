@@ -4,17 +4,20 @@ import React, { useState, useMemo } from 'react';
 import {
     Box,
     Button,
+    Tabs,
+    Tab,
     List,
     ListItem,
     ListItemAvatar,
     Avatar,
+    ListItemSecondaryAction,
     Typography,
     CircularProgress,
     IconButton,
     Chip,
+    Paper,
     useTheme,
     useMediaQuery,
-    Paper,
 } from '@mui/material';
 import {
     Delete as DeleteIcon,
@@ -23,44 +26,78 @@ import {
     CalendarToday as CalendarIcon,
 } from '@mui/icons-material';
 import {
-    useMessagesByReceiverQuery,
+    useMessagesQuery,
     useSendMessageMutation,
-    useDeleteMessageMutation,
+    useUpdateMessageMutation,
 } from '../../api/services/messageService';
+import { toast } from 'react-toastify';
 import { useAllUsersQuery } from '../../api/services/userService';
 import MessageViewDialog from './MessageViewDialog';
 import MessageComposeDialog from './MessageComposeDialog';
 import ConfirmDialog from './ConfirmDialog';
-import { Message as IMessage } from '../../packages/models/Message';
+import { MessageResponse } from '../../packages/models/Message';
+
+const TRUNCATE_LENGTH = 100;
 
 const Messages: React.FC = () => {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isXs = useMediaQuery(theme.breakpoints.down('sm'));
     const currentUserId = localStorage.getItem('currentUser') || '';
 
-    // Fetch user’s incoming messages & all users for avatars
-    const { data: messages, isLoading, refetch: refetchMessages } =
-        useMessagesByReceiverQuery(currentUserId);
+    // Fetch all messages & users
+    const { data: allMessages = [], isLoading, refetch } = useMessagesQuery();
     const { data: users } = useAllUsersQuery();
 
+    // Mutations
     const sendMessage = useSendMessageMutation().mutate;
-    const deleteMessage = useDeleteMessageMutation().mutate;
+    const { mutate: updateMessage } = useUpdateMessageMutation({
+        onSuccess: () => {
+            toast.info('Message hidden from your view');
+            refetch();
+        },
+    });
 
-    // Local UI state
-    const [composeOpen, setComposeOpen] = useState(false);
-    const [viewMsg, setViewMsg] = useState<IMessage | null>(null);
-    const [delId, setDelId] = useState<string | null>(null);
+    // Split into received & sent and exclude hidden
+    const received = useMemo(
+        () =>
+            allMessages.filter(
+                m =>
+                    m.receiverId === currentUserId &&
+                    !(m.deletedFor || []).includes(currentUserId)
+            ),
+        [allMessages, currentUserId]
+    );
+    const sent = useMemo(
+        () =>
+            allMessages.filter(
+                m =>
+                    m.senderId === currentUserId &&
+                    !(m.deletedFor || []).includes(currentUserId)
+            ),
+        [allMessages, currentUserId]
+    );
 
-    // Build quick lookup for avatars
+    // Avatar lookup
     const avatarMap = useMemo(() => {
         const m: Record<string, string> = {};
         users?.forEach(u => {
             m[u._id] = u.avatar || '';
-            m[u.email] = u.avatar || '';
+            m[u.email!] = u.avatar || '';
         });
         return m;
     }, [users]);
 
+    // UI state
+    const [tab, setTab] = useState<'received' | 'sent'>('received');
+    const [composeOpen, setComposeOpen] = useState(false);
+    const [viewMsg, setViewMsg] = useState<MessageResponse | null>(null);
+    const [delId, setDelId] = useState<string | null>(null);
+
+    const activeList = tab === 'received' ? received : sent;
+    const emptyText =
+        tab === 'received' ? 'No received messages.' : 'No sent messages.';
+
+    // Send handler
     const handleSend = (vals: {
         receiver: string;
         topic: string;
@@ -69,13 +106,29 @@ const Messages: React.FC = () => {
         sendMessage(
             {
                 date: new Date().toISOString(),
+                senderId: currentUserId,
+                receiverId: vals.receiver,
                 sender: currentUserId,
                 receiver: vals.receiver,
                 topic: vals.topic,
                 description: vals.description,
             },
-            { onSuccess: () => refetchMessages() }
+            {
+                onSuccess: () => {
+                    refetch();
+                    setComposeOpen(false);
+                },
+            }
         );
+    };
+
+    // Soft-hide handler
+    const handleHide = (msg: MessageResponse) => {
+        const newDeletedFor = Array.from(
+            new Set([...(msg.deletedFor || []), currentUserId])
+        );
+        updateMessage({ id: msg._id, data: { deletedFor: newDeletedFor } });
+        setDelId(null);
     };
 
     if (isLoading) {
@@ -88,11 +141,24 @@ const Messages: React.FC = () => {
 
     return (
         <Box sx={{ p: 2 }}>
+            <Paper sx={{ mb: 2 }}>
+                <Tabs
+                    value={tab}
+                    onChange={(_, v) => setTab(v)}
+                    indicatorColor="primary"
+                    textColor="primary"
+                    variant={isXs ? 'fullWidth' : 'standard'}
+                >
+                    <Tab label="Received" value="received" />
+                    <Tab label="Sent" value="sent" />
+                </Tabs>
+            </Paper>
+
             <Button
                 variant="contained"
                 color="primary"
                 onClick={() => setComposeOpen(true)}
-                sx={{ mb: 4 }}
+                sx={{ mb: 2 }}
             >
                 Compose Message
             </Button>
@@ -103,127 +169,180 @@ const Messages: React.FC = () => {
                 onSend={handleSend}
             />
 
-            {messages && messages.length > 0 ? (
+            {activeList.length > 0 ? (
                 <Paper>
                     <List disablePadding>
-                        {messages.map(m => {
-                            const from = m.senderEmail ?? m.sender;
-                            const to = m.receiverEmail ?? m.receiver;
+                        {activeList.map(m => {
+                            const from = m.senderEmail || m.senderId!;
+                            const to = m.receiverEmail || m.receiverId!;
                             const date = new Date(m.date).toLocaleString();
+                            const isLong = m.description.length > TRUNCATE_LENGTH;
+                            const preview = isLong
+                                ? m.description.slice(0, TRUNCATE_LENGTH) + '…'
+                                : m.description;
 
                             return (
                                 <ListItem
                                     key={m._id}
                                     divider
-                                    secondaryAction={
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                    sx={{
+                                        alignItems: 'flex-start',
+                                        flexDirection: 'column',
+                                        py: 2,
+                                        px: isXs ? 1 : 3,
+                                    }}
+                                >
+                                    {/* Header: avatar + chips */}
+                                    {isXs ? (
+                                        <Box
+                                            sx={{
+                                                width: '100%',
+                                                textAlign: 'center',
+                                                mb: 2,
+                                            }}
+                                        >
+                                            <Avatar
+                                                src={avatarMap[from] || undefined}
+                                                sx={{ width: 48, height: 48, mx: 'auto', mb: 1 }}
+                                            />
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    gap: 1,
+                                                }}
+                                            >
+                                                <Chip icon={<EmailIcon />} label={from} size="small" />
+                                                <Typography variant="body2" color="text.secondary">
+                                                    →
+                                                </Typography>
+                                                <Chip icon={<EmailIcon />} label={to} size="small" />
+                                                <Chip
+                                                    icon={<CalendarIcon />}
+                                                    label={date}
+                                                    size="small"
+                                                    sx={{ mt: 1 }}
+                                                />
+                                            </Box>
+                                        </Box>
+                                    ) : (
+                                        <Box sx={{ display: 'flex', mb: 2 }}>
+                                            <ListItemAvatar>
+                                                <Avatar
+                                                    src={avatarMap[from] || undefined}
+                                                    sx={{ width: 64, height: 64, mr: 2 }}
+                                                />
+                                            </ListItemAvatar>
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    flexWrap: 'wrap',
+                                                    gap: 1,
+                                                }}
+                                            >
+                                                <Chip icon={<EmailIcon />} label={from} size="small" />
+                                                <Typography variant="body2" color="text.secondary">
+                                                    →
+                                                </Typography>
+                                                <Chip icon={<EmailIcon />} label={to} size="small" />
+                                                <Chip
+                                                    icon={<CalendarIcon />}
+                                                    label={date}
+                                                    size="small"
+                                                    sx={{ ml: 2 }}
+                                                />
+                                            </Box>
+                                        </Box>
+                                    )}
+
+                                    {/* Subject & truncated body */}
+                                    <Box sx={{ width: '100%', px: isXs ? 1 : 0 }}>
+                                        {m.topic && (
+                                            <Typography
+                                                variant={isXs ? 'subtitle2' : 'h6'}
+                                                sx={{ fontWeight: 'bold', mb: 1 }}
+                                            >
+                                                {m.topic}
+                                            </Typography>
+                                        )}
+                                        <Typography
+                                            variant="body2"
+                                            color="text.primary"
+                                            sx={{ whiteSpace: 'pre-wrap' }}
+                                        >
+                                            {preview}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Actions */}
+                                    {!isXs ? (
+                                        <ListItemSecondaryAction>
                                             <IconButton
                                                 edge="end"
                                                 aria-label="view"
                                                 color="primary"
-                                                onClick={() => setViewMsg({ ...m, sender: m.sender ?? '', receiver: m.receiver ?? '' })}
+                                                onClick={() => setViewMsg(m)}
                                             >
                                                 <VisibilityIcon />
                                             </IconButton>
                                             <IconButton
                                                 edge="end"
-                                                aria-label="delete"
+                                                aria-label="hide"
+                                                color="error"
+                                                onClick={() => setDelId(m._id)}
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </ListItemSecondaryAction>
+                                    ) : (
+                                        <Box
+                                            sx={{
+                                                mt: 2,
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                gap: 2,
+                                            }}
+                                        >
+                                            <IconButton
+                                                aria-label="view"
+                                                color="primary"
+                                                onClick={() => setViewMsg(m)}
+                                            >
+                                                <VisibilityIcon />
+                                            </IconButton>
+                                            <IconButton
+                                                aria-label="hide"
                                                 color="error"
                                                 onClick={() => setDelId(m._id)}
                                             >
                                                 <DeleteIcon />
                                             </IconButton>
                                         </Box>
-                                    }
-                                    sx={{ alignItems: 'flex-start' }}
-                                >
-                                    <ListItemAvatar>
-                                        <Avatar src={from ? avatarMap[from] || undefined : undefined} />
-                                    </ListItemAvatar>
-
-                                    <Box sx={{ flex: 1, ml: 2 }}>
-                                        {/* Row 1: from → to (date) */}
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                flexDirection: isMobile ? 'column' : 'row',
-                                                alignItems: isMobile ? 'flex-start' : 'center',
-                                                gap: 1,
-                                                mb: 0.5,
-                                            }}
-                                        >
-                                            <Chip
-                                                icon={<EmailIcon />}
-                                                label={from}
-                                                size="small"
-                                            />
-                                            <Typography
-                                                variant="body2"
-                                                color="text.secondary"
-                                                sx={{ ml: isMobile ? 0 : 1, mr: 1 }}
-                                            >
-                                                →
-                                            </Typography>
-                                            <Chip
-                                                icon={<EmailIcon />}
-                                                label={to}
-                                                size="small"
-                                            />
-                                            <Chip
-                                                icon={<CalendarIcon />}
-                                                label={date}
-                                                size="small"
-                                                sx={{ ml: isMobile ? 0 : 2 }}
-                                            />
-                                        </Box>
-
-                                        {/* Row 2: topic */}
-                                        {m.topic && (
-                                            <Typography
-                                                variant="subtitle2"
-                                                sx={{ fontWeight: 'bold', mb: 0.5 }}
-                                            >
-                                                {m.topic}
-                                            </Typography>
-                                        )}
-
-                                        {/* Row 3: body */}
-                                        <Typography variant="body2" color="text.primary">
-                                            {m.description}
-                                        </Typography>
-                                    </Box>
+                                    )}
                                 </ListItem>
                             );
                         })}
                     </List>
                 </Paper>
             ) : (
-                <Typography>No new messages.</Typography>
+                <Typography>{emptyText}</Typography>
             )}
 
-            {/* View dialog */}
             <MessageViewDialog
                 open={Boolean(viewMsg)}
                 message={viewMsg}
                 onClose={() => setViewMsg(null)}
             />
 
-            {/* Delete confirmation */}
             <ConfirmDialog
                 open={Boolean(delId)}
-                title="Delete this message?"
+                title="Delete message?"
                 onCancel={() => setDelId(null)}
                 onConfirm={() => {
-                    if (!delId) return;
-                    deleteMessage(
-                        { id: delId, userId: currentUserId },
-                        {
-                            onSuccess: () => {
-                                refetchMessages();
-                                setDelId(null);
-                            },
-                        }
-                    );
+                    const msg = activeList.find(x => x._id === delId);
+                    if (msg) handleHide(msg);
                 }}
             />
         </Box>

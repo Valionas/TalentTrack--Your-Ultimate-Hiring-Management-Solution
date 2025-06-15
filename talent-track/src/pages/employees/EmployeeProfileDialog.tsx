@@ -19,12 +19,13 @@ import { Message as IMessage } from '../../packages/models/Message';
 import { useSendMessageMutation } from '../../api/services/messageService';
 import MessageComposeDialog from '../messages/MessageComposeDialog';
 import { toast } from 'react-toastify';
+import { calculateAverageRating } from './utils';
 
 interface Props {
     open: boolean;
     employee: UserProfileResponse | null;
     onClose: () => void;
-    onRate: (emp: UserProfileResponse, value: number | null) => void;
+    onRate: (emp: UserProfileResponse, value: number) => void;
 }
 
 const EmployeeProfileDialog: React.FC<Props> = ({
@@ -102,9 +103,10 @@ const EmployeeProfileDialog: React.FC<Props> = ({
                                 </Typography>
                                 <Box sx={{ mt: 1 }}>
                                     <Rating
-                                        value={tempRating ?? (employee.rating ?? 0)}
+                                        value={tempRating ?? (calculateAverageRating(employee.ratings) ?? 0)}
                                         precision={0.5}
                                         onChange={(_, v) => setTempRating(v)}
+                                        readOnly={isSelf}
                                     />
                                 </Box>
                             </Box>
@@ -160,7 +162,10 @@ const EmployeeProfileDialog: React.FC<Props> = ({
                     <Button
                         variant="contained"
                         onClick={() => {
-                            onRate(employee, tempRating);
+                            // only call onRate if user actually picked a rating
+                            if (tempRating != null) {
+                                onRate(employee, tempRating);
+                            }
                             onClose();
                         }}
                     >
