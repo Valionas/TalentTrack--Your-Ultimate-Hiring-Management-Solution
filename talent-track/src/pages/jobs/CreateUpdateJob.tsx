@@ -18,6 +18,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { FaBuilding } from 'react-icons/fa';
 import { Job, JobResponse } from '../../packages/models/Job';
 
@@ -401,9 +402,20 @@ const CreateUpdateJob: React.FC<CreateUpdateJobProps> = ({
                   {errors.skills}
                 </Typography>
               )}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {jobDetails.skills.map((s, i) => (
-                  <Chip key={i} label={s} />
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                {jobDetails.skills.map((skill, i) => (
+                  <Chip
+                    key={`skill-${i}`}
+                    label={skill}
+                    onDelete={() => {
+                      setJobDetails(jd => ({
+                        ...jd,
+                        skills: jd.skills.filter((s, idx) => idx !== i),
+                      }));
+                    }}
+                    deleteIcon={<DeleteIcon />}
+                    sx={{ mr: 0.5, mb: 0.5 }}
+                  />
                 ))}
               </Box>
             </Grid>
@@ -421,9 +433,20 @@ const CreateUpdateJob: React.FC<CreateUpdateJobProps> = ({
                   <AddIcon />
                 </IconButton>
               </Box>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {jobDetails.benefits.map((b, i) => (
-                  <Chip key={i} label={b} />
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                {jobDetails.benefits.map((benefit, i) => (
+                  <Chip
+                    key={`benefit-${i}`}
+                    label={benefit}
+                    onDelete={() => {
+                      setJobDetails(jd => ({
+                        ...jd,
+                        benefits: jd.benefits.filter((b, idx) => idx !== i),
+                      }));
+                    }}
+                    deleteIcon={<DeleteIcon />}
+                    sx={{ mr: 0.5, mb: 0.5 }}
+                  />
                 ))}
               </Box>
             </Grid>

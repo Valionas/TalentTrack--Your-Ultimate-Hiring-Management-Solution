@@ -19,13 +19,16 @@ import SchoolIcon from '@mui/icons-material/School';
 import WorkIcon from '@mui/icons-material/Work';
 import BenefitsIcon from '@mui/icons-material/CardGiftcard';
 import CodeIcon from '@mui/icons-material/Code';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import CheckIcon from '@mui/icons-material/Check';
 import { styled } from '@mui/material/styles';
 import { JobResponse } from '../../packages/models/Job';
+import { isLoggedIn } from '../../utils/authUtils';
+import SendIcon from '@mui/icons-material/Send'; // Use a "send" icon for apply
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'; // For "Applied"
 
 import ConfirmApplyDialog from './ConfirmApplyDialog';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog';
@@ -143,7 +146,7 @@ const JobCard: React.FC<JobCardProps> = ({
                   key={`skill-${i}`}
                   size="small"
                   label={skill}
-                  icon={<CodeIcon fontSize="small" />}
+                  icon={<LightbulbIcon fontSize="small" />}
                   variant="outlined"
                   sx={{ mr: 0.5, mb: 0.5 }}
                 />
@@ -200,13 +203,25 @@ const JobCard: React.FC<JobCardProps> = ({
                   </>
                 )}
 
-                {canApply && (
+                {isLoggedIn() && alreadyApplied && (
                   <Button
                     variant="outlined"
                     size="small"
                     color="success"
+                    startIcon={<CheckCircleIcon />}
+                    disabled
+                  >
+                    Applied
+                  </Button>
+                )}
+
+                {isLoggedIn() && canApply && (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    color="primary"
                     onClick={() => setApplyOpen(true)}
-                    startIcon={<CheckIcon fontSize="small" />}
+                    startIcon={<SendIcon />}
                   >
                     Apply
                   </Button>

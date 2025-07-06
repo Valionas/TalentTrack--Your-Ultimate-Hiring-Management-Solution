@@ -2,9 +2,14 @@ import React from "react";
 import { Box, Typography, Button, Grid } from "@mui/material";
 import { motion } from "framer-motion";
 import hirePhoto from "../../../resources/images/hire-photo.png";
+import { useNavigate } from 'react-router-dom';
+import { isLoggedIn } from "../../../utils/authUtils";
+
 const AnimationBox = motion(Box);
 
 const InitialSection: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <Grid container spacing={5} alignItems="center">
       <Grid item xs={12} md={6}>
@@ -20,7 +25,18 @@ const InitialSection: React.FC = () => {
             Connecting talent with opportunity seamlessly. Discover jobs, apply
             online, and build your career with ease.
           </Typography>
-          <Button variant="contained" color="primary" size="large">
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              if (isLoggedIn()) {
+                navigate('/jobs');
+              } else {
+                navigate('/login');
+              }
+            }}
+            size="large"
+          >
             Get Started
           </Button>
         </AnimationBox>
