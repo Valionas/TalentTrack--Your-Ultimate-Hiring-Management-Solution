@@ -115,6 +115,7 @@ const Messages: React.FC = () => {
             },
             {
                 onSuccess: () => {
+                    toast.success('Message sent successfully!');
                     refetch();
                     setComposeOpen(false);
                 },
@@ -130,6 +131,14 @@ const Messages: React.FC = () => {
         updateMessage({ id: msg._id, data: { deletedFor: newDeletedFor } });
         setDelId(null);
     };
+
+    // Sort messages by date descending
+    const sortedReceived = [...received].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    const sortedSent = [...sent].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
 
     if (isLoading) {
         return (
@@ -172,158 +181,311 @@ const Messages: React.FC = () => {
             {activeList.length > 0 ? (
                 <Paper>
                     <List disablePadding>
-                        {activeList.map(m => {
-                            const from = m.senderEmail || m.senderId!;
-                            const to = m.receiverEmail || m.receiverId!;
-                            const date = new Date(m.date).toLocaleString();
-                            const isLong = m.description.length > TRUNCATE_LENGTH;
-                            const preview = isLong
-                                ? m.description.slice(0, TRUNCATE_LENGTH) + '…'
-                                : m.description;
+                        {tab === 'received'
+                            ? sortedReceived.map(m => {
+                                const from = m.senderEmail || m.senderId!;
+                                const to = m.receiverEmail || m.receiverId!;
+                                const date = new Date(m.date).toLocaleString();
+                                const isLong = m.description.length > TRUNCATE_LENGTH;
+                                const preview = isLong
+                                    ? m.description.slice(0, TRUNCATE_LENGTH) + '…'
+                                    : m.description;
 
-                            return (
-                                <ListItem
-                                    key={m._id}
-                                    divider
-                                    sx={{
-                                        alignItems: 'flex-start',
-                                        flexDirection: 'column',
-                                        py: 2,
-                                        px: isXs ? 1 : 3,
-                                    }}
-                                >
-                                    {/* Header: avatar + chips */}
-                                    {isXs ? (
-                                        <Box
-                                            sx={{
-                                                width: '100%',
-                                                textAlign: 'center',
-                                                mb: 2,
-                                            }}
-                                        >
-                                            <Avatar
-                                                src={avatarMap[from] || undefined}
-                                                sx={{ width: 48, height: 48, mx: 'auto', mb: 1 }}
-                                            />
+                                return (
+                                    <ListItem
+                                        key={m._id}
+                                        divider
+                                        sx={{
+                                            alignItems: 'flex-start',
+                                            flexDirection: 'column',
+                                            py: 2,
+                                            px: isXs ? 1 : 3,
+                                        }}
+                                    >
+                                        {/* Header: avatar + chips */}
+                                        {isXs ? (
                                             <Box
                                                 sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                    gap: 1,
+                                                    width: '100%',
+                                                    textAlign: 'center',
+                                                    mb: 2,
                                                 }}
                                             >
-                                                <Chip icon={<EmailIcon />} label={from} size="small" />
-                                                <Typography variant="body2" color="text.secondary">
-                                                    →
-                                                </Typography>
-                                                <Chip icon={<EmailIcon />} label={to} size="small" />
-                                                <Chip
-                                                    icon={<CalendarIcon />}
-                                                    label={date}
-                                                    size="small"
-                                                    sx={{ mt: 1 }}
-                                                />
-                                            </Box>
-                                        </Box>
-                                    ) : (
-                                        <Box sx={{ display: 'flex', mb: 2 }}>
-                                            <ListItemAvatar>
                                                 <Avatar
                                                     src={avatarMap[from] || undefined}
-                                                    sx={{ width: 64, height: 64, mr: 2 }}
+                                                    sx={{ width: 48, height: 48, mx: 'auto', mb: 1 }}
                                                 />
-                                            </ListItemAvatar>
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                    }}
+                                                >
+                                                    <Chip icon={<EmailIcon />} label={from} size="small" />
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        →
+                                                    </Typography>
+                                                    <Chip icon={<EmailIcon />} label={to} size="small" />
+                                                    <Chip
+                                                        icon={<CalendarIcon />}
+                                                        label={date}
+                                                        size="small"
+                                                        sx={{ mt: 1 }}
+                                                    />
+                                                </Box>
+                                            </Box>
+                                        ) : (
+                                            <Box sx={{ display: 'flex', mb: 2 }}>
+                                                <ListItemAvatar>
+                                                    <Avatar
+                                                        src={avatarMap[from] || undefined}
+                                                        sx={{ width: 64, height: 64, mr: 2 }}
+                                                    />
+                                                </ListItemAvatar>
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        flexWrap: 'wrap',
+                                                        gap: 1,
+                                                    }}
+                                                >
+                                                    <Chip icon={<EmailIcon />} label={from} size="small" />
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        →
+                                                    </Typography>
+                                                    <Chip icon={<EmailIcon />} label={to} size="small" />
+                                                    <Chip
+                                                        icon={<CalendarIcon />}
+                                                        label={date}
+                                                        size="small"
+                                                        sx={{ ml: 2 }}
+                                                    />
+                                                </Box>
+                                            </Box>
+                                        )}
+
+                                        {/* Subject & truncated body */}
+                                        <Box sx={{ width: '100%', px: isXs ? 1 : 0 }}>
+                                            {m.topic && (
+                                                <Typography
+                                                    variant={isXs ? 'subtitle2' : 'h6'}
+                                                    sx={{ fontWeight: 'bold', mb: 1 }}
+                                                >
+                                                    {m.topic}
+                                                </Typography>
+                                            )}
+                                            <Typography
+                                                variant="body2"
+                                                color="text.primary"
+                                                sx={{ whiteSpace: 'pre-wrap' }}
+                                            >
+                                                {preview}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Actions */}
+                                        {!isXs ? (
+                                            <ListItemSecondaryAction>
+                                                <IconButton
+                                                    edge="end"
+                                                    aria-label="view"
+                                                    color="primary"
+                                                    onClick={() => setViewMsg(m)}
+                                                >
+                                                    <VisibilityIcon />
+                                                </IconButton>
+                                                <IconButton
+                                                    edge="end"
+                                                    aria-label="hide"
+                                                    color="error"
+                                                    onClick={() => setDelId(m._id)}
+                                                >
+                                                    <DeleteIcon />
+                                                </IconButton>
+                                            </ListItemSecondaryAction>
+                                        ) : (
                                             <Box
                                                 sx={{
+                                                    mt: 2,
                                                     display: 'flex',
-                                                    alignItems: 'center',
-                                                    flexWrap: 'wrap',
-                                                    gap: 1,
+                                                    justifyContent: 'center',
+                                                    gap: 2,
                                                 }}
                                             >
-                                                <Chip icon={<EmailIcon />} label={from} size="small" />
-                                                <Typography variant="body2" color="text.secondary">
-                                                    →
-                                                </Typography>
-                                                <Chip icon={<EmailIcon />} label={to} size="small" />
-                                                <Chip
-                                                    icon={<CalendarIcon />}
-                                                    label={date}
-                                                    size="small"
-                                                    sx={{ ml: 2 }}
-                                                />
+                                                <IconButton
+                                                    aria-label="view"
+                                                    color="primary"
+                                                    onClick={() => setViewMsg(m)}
+                                                >
+                                                    <VisibilityIcon />
+                                                </IconButton>
+                                                <IconButton
+                                                    aria-label="hide"
+                                                    color="error"
+                                                    onClick={() => setDelId(m._id)}
+                                                >
+                                                    <DeleteIcon />
+                                                </IconButton>
                                             </Box>
-                                        </Box>
-                                    )}
-
-                                    {/* Subject & truncated body */}
-                                    <Box sx={{ width: '100%', px: isXs ? 1 : 0 }}>
-                                        {m.topic && (
-                                            <Typography
-                                                variant={isXs ? 'subtitle2' : 'h6'}
-                                                sx={{ fontWeight: 'bold', mb: 1 }}
-                                            >
-                                                {m.topic}
-                                            </Typography>
                                         )}
-                                        <Typography
-                                            variant="body2"
-                                            color="text.primary"
-                                            sx={{ whiteSpace: 'pre-wrap' }}
-                                        >
-                                            {preview}
-                                        </Typography>
-                                    </Box>
+                                    </ListItem>
+                                );
+                            })
+                            : sortedSent.map(m => {
+                                const from = m.senderEmail || m.senderId!;
+                                const to = m.receiverEmail || m.receiverId!;
+                                const date = new Date(m.date).toLocaleString();
+                                const isLong = m.description.length > TRUNCATE_LENGTH;
+                                const preview = isLong
+                                    ? m.description.slice(0, TRUNCATE_LENGTH) + '…'
+                                    : m.description;
 
-                                    {/* Actions */}
-                                    {!isXs ? (
-                                        <ListItemSecondaryAction>
-                                            <IconButton
-                                                edge="end"
-                                                aria-label="view"
-                                                color="primary"
-                                                onClick={() => setViewMsg(m)}
+                                return (
+                                    <ListItem
+                                        key={m._id}
+                                        divider
+                                        sx={{
+                                            alignItems: 'flex-start',
+                                            flexDirection: 'column',
+                                            py: 2,
+                                            px: isXs ? 1 : 3,
+                                        }}
+                                    >
+                                        {/* Header: avatar + chips */}
+                                        {isXs ? (
+                                            <Box
+                                                sx={{
+                                                    width: '100%',
+                                                    textAlign: 'center',
+                                                    mb: 2,
+                                                }}
                                             >
-                                                <VisibilityIcon />
-                                            </IconButton>
-                                            <IconButton
-                                                edge="end"
-                                                aria-label="hide"
-                                                color="error"
-                                                onClick={() => setDelId(m._id)}
+                                                <Avatar
+                                                    src={avatarMap[from] || undefined}
+                                                    sx={{ width: 48, height: 48, mx: 'auto', mb: 1 }}
+                                                />
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                    }}
+                                                >
+                                                    <Chip icon={<EmailIcon />} label={from} size="small" />
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        →
+                                                    </Typography>
+                                                    <Chip icon={<EmailIcon />} label={to} size="small" />
+                                                    <Chip
+                                                        icon={<CalendarIcon />}
+                                                        label={date}
+                                                        size="small"
+                                                        sx={{ mt: 1 }}
+                                                    />
+                                                </Box>
+                                            </Box>
+                                        ) : (
+                                            <Box sx={{ display: 'flex', mb: 2 }}>
+                                                <ListItemAvatar>
+                                                    <Avatar
+                                                        src={avatarMap[from] || undefined}
+                                                        sx={{ width: 64, height: 64, mr: 2 }}
+                                                    />
+                                                </ListItemAvatar>
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        flexWrap: 'wrap',
+                                                        gap: 1,
+                                                    }}
+                                                >
+                                                    <Chip icon={<EmailIcon />} label={from} size="small" />
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        →
+                                                    </Typography>
+                                                    <Chip icon={<EmailIcon />} label={to} size="small" />
+                                                    <Chip
+                                                        icon={<CalendarIcon />}
+                                                        label={date}
+                                                        size="small"
+                                                        sx={{ ml: 2 }}
+                                                    />
+                                                </Box>
+                                            </Box>
+                                        )}
+
+                                        {/* Subject & truncated body */}
+                                        <Box sx={{ width: '100%', px: isXs ? 1 : 0 }}>
+                                            {m.topic && (
+                                                <Typography
+                                                    variant={isXs ? 'subtitle2' : 'h6'}
+                                                    sx={{ fontWeight: 'bold', mb: 1 }}
+                                                >
+                                                    {m.topic}
+                                                </Typography>
+                                            )}
+                                            <Typography
+                                                variant="body2"
+                                                color="text.primary"
+                                                sx={{ whiteSpace: 'pre-wrap' }}
                                             >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </ListItemSecondaryAction>
-                                    ) : (
-                                        <Box
-                                            sx={{
-                                                mt: 2,
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                gap: 2,
-                                            }}
-                                        >
-                                            <IconButton
-                                                aria-label="view"
-                                                color="primary"
-                                                onClick={() => setViewMsg(m)}
-                                            >
-                                                <VisibilityIcon />
-                                            </IconButton>
-                                            <IconButton
-                                                aria-label="hide"
-                                                color="error"
-                                                onClick={() => setDelId(m._id)}
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
+                                                {preview}
+                                            </Typography>
                                         </Box>
-                                    )}
-                                </ListItem>
-                            );
-                        })}
+
+                                        {/* Actions */}
+                                        {!isXs ? (
+                                            <ListItemSecondaryAction>
+                                                <IconButton
+                                                    edge="end"
+                                                    aria-label="view"
+                                                    color="primary"
+                                                    onClick={() => setViewMsg(m)}
+                                                >
+                                                    <VisibilityIcon />
+                                                </IconButton>
+                                                <IconButton
+                                                    edge="end"
+                                                    aria-label="hide"
+                                                    color="error"
+                                                    onClick={() => setDelId(m._id)}
+                                                >
+                                                    <DeleteIcon />
+                                                </IconButton>
+                                            </ListItemSecondaryAction>
+                                        ) : (
+                                            <Box
+                                                sx={{
+                                                    mt: 2,
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    gap: 2,
+                                                }}
+                                            >
+                                                <IconButton
+                                                    aria-label="view"
+                                                    color="primary"
+                                                    onClick={() => setViewMsg(m)}
+                                                >
+                                                    <VisibilityIcon />
+                                                </IconButton>
+                                                <IconButton
+                                                    aria-label="hide"
+                                                    color="error"
+                                                    onClick={() => setDelId(m._id)}
+                                                >
+                                                    <DeleteIcon />
+                                                </IconButton>
+                                            </Box>
+                                        )}
+                                    </ListItem>
+                                );
+                            })}
                     </List>
                 </Paper>
             ) : (

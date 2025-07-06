@@ -1,5 +1,3 @@
-// src/components/MessageComposeDialog.tsx
-
 import React, { useState, useEffect, useMemo } from 'react';
 import {
     Dialog,
@@ -16,6 +14,7 @@ import {
 } from '@mui/material';
 import { useAllUsersQuery } from '../../api/services/userService';
 import { UserProfileResponse } from '../../packages/models/UserProfile';
+import { toast } from "react-toastify";
 
 interface ComposeValues {
     receiver: string;       // this will be user._id
@@ -42,6 +41,13 @@ const MessageComposeDialog: React.FC<Props> = ({
         topic: '',
         description: '',
     });
+
+    // NEW: Validation error state
+    const [errors, setErrors] = useState<{ topic: string; description: string }>({
+        topic: '',
+        description: '',
+    });
+
     const [selectedUser, setSelectedUser] = useState<UserProfileResponse | null>(null);
 
     // Whenever the dialog opens or defaultReceiver (email) changes, initialize:
@@ -49,6 +55,7 @@ const MessageComposeDialog: React.FC<Props> = ({
         if (!open) return;
         // Reset text fields
         setValues({ receiver: '', topic: '', description: '' });
+        setErrors({ topic: '', description: '' }); // clear errors
         if (defaultReceiver && users) {
             // Look up by email:
             const match = users.find(u => u.email === defaultReceiver);
@@ -63,7 +70,31 @@ const MessageComposeDialog: React.FC<Props> = ({
         }
     }, [open, defaultReceiver, users]);
 
+    const validate = () => {
+        const newErrors = { topic: '', description: '' };
+        let hasError = false;
+
+        if (!values.topic.trim()) {
+            newErrors.topic = 'Topic is required';
+            hasError = true;
+        }
+        if (!values.description.trim()) {
+            newErrors.description = 'Message is required';
+            hasError = true;
+        }
+        setErrors(newErrors);
+        return !hasError;
+    };
+
     const handleSend = () => {
+        if (!validate()) return;
+        onSend(values);
+        onClose();
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!validate()) return;
         onSend(values);
         onClose();
     };
@@ -140,7 +171,15 @@ const MessageComposeDialog: React.FC<Props> = ({
                             label="Topic"
                             fullWidth
                             value={values.topic}
-                            onChange={e => setValues(v => ({ ...v, topic: e.target.value }))}
+                            error={Boolean(errors.topic)}
+                            helperText={errors.topic}
+                            onChange={e => {
+                                const val = e.target.value;
+                                setValues(v => ({ ...v, topic: val }));
+                                if (errors.topic && val.trim()) {
+                                    setErrors(err => ({ ...err, topic: '' }));
+                                }
+                            }}
                             sx={{ mt: 2 }}
                         />
                         <TextField
@@ -149,9 +188,15 @@ const MessageComposeDialog: React.FC<Props> = ({
                             multiline
                             rows={4}
                             value={values.description}
-                            onChange={e =>
-                                setValues(v => ({ ...v, description: e.target.value }))
-                            }
+                            error={Boolean(errors.description)}
+                            helperText={errors.description}
+                            onChange={e => {
+                                const val = e.target.value;
+                                setValues(v => ({ ...v, description: val }));
+                                if (errors.description && val.trim()) {
+                                    setErrors(err => ({ ...err, description: '' }));
+                                }
+                            }}
                             sx={{ mt: 2 }}
                         />
                     </>
@@ -162,7 +207,7 @@ const MessageComposeDialog: React.FC<Props> = ({
                     Cancel
                 </Button>
                 <Button
-                    onClick={handleSend}
+                    onClick={handleSubmit}
                     variant="contained"
                     disabled={!values.receiver}
                 >
