@@ -16,6 +16,10 @@ import {
   AuthResponse,
   LoginData,
 } from '../../api/services/authService';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 interface FormErrors {
   email: string;
@@ -27,6 +31,7 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [errors, setErrors] = useState<FormErrors>({ email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
 
   const { mutate: login, isLoading } = useLoginMutation({
     onSuccess: (data: AuthResponse) => {
@@ -60,7 +65,7 @@ const Login: React.FC = () => {
 
   const validatePassword = (password: string): string => {
     if (!password) return 'Password is required';
-    return password.length >= 8 ? '' : 'Password must be at least 8 characters';
+    return '';
   };
 
   const handleEmailChange = (
@@ -132,13 +137,27 @@ const Login: React.FC = () => {
               fullWidth
               name="password"
               label="Password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               id="password"
               autoComplete="current-password"
               value={password}
               onChange={handlePasswordChange}
               error={Boolean(errors.password)}
               helperText={errors.password}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword((show) => !show)}
+                      edge="end"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <Box
               sx={{

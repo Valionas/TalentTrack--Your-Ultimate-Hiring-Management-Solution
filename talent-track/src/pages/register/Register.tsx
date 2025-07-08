@@ -14,6 +14,8 @@ import {
   Avatar,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -54,6 +56,10 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
   const [safeCode, setSafeCode] = useState('');
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
+  const [showSafeCode, setShowSafeCode] = useState(false);
 
   const [errors, setErrors] = useState<FormErrors>({
     firstName: '',
@@ -332,12 +338,26 @@ const Register: React.FC = () => {
                   fullWidth
                   id="password"
                   label="Password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   error={!!errors.password}
                   helperText={errors.password}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => setShowPassword((show) => !show)}
+                          edge="end"
+                          tabIndex={-1}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
 
@@ -348,11 +368,25 @@ const Register: React.FC = () => {
                   fullWidth
                   id="repeatPassword"
                   label="Repeat Password"
-                  type="password"
+                  type={showRepeatPassword ? "text" : "password"}
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
                   error={!!errors.repeatPassword}
                   helperText={errors.repeatPassword}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle repeat password visibility"
+                          onClick={() => setShowRepeatPassword((show) => !show)}
+                          edge="end"
+                          tabIndex={-1}
+                        >
+                          {showRepeatPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
 
@@ -361,6 +395,7 @@ const Register: React.FC = () => {
                 <TextField
                   required
                   fullWidth
+                  type={showSafeCode ? "text" : "password"}
                   id="safeCode"
                   label="Safe Code"
                   value={safeCode}
@@ -375,6 +410,14 @@ const Register: React.FC = () => {
                             <InfoOutlinedIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
+                        <IconButton
+                          aria-label="toggle safe code visibility"
+                          onClick={() => setShowSafeCode((show) => !show)}
+                          edge="end"
+                          tabIndex={-1}
+                        >
+                          {showSafeCode ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
                       </InputAdornment>
                     ),
                   }}

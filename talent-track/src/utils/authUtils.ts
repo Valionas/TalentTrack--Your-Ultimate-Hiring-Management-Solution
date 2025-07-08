@@ -8,4 +8,5 @@ export const isLoggedIn = (): boolean => {
 export const logout = (): void => {
   localStorage.removeItem('token');
   localStorage.removeItem('email');
+  localStorage.removeItem('currentUser');
 };
